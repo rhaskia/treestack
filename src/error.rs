@@ -1,12 +1,12 @@
 use std::ops::{Range, Deref, DerefMut};
 
-struct Error {
-    message: String,
-    range: Range<usize>
+pub struct Error {
+    pub message: String,
+    pub range: Range<usize>
 }
 
 
-struct Positioned<T> {
+pub struct Positioned<T> {
     inner: T,
     range: Range<usize>
 }
