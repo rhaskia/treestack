@@ -1,14 +1,29 @@
 use std::ops::{Range, Deref, DerefMut};
+use std::fmt::{Debug, Formatter};
 
 pub struct Error {
     pub message: String,
     pub range: Range<usize>
 }
 
-
 pub struct Positioned<T> {
-    inner: T,
-    range: Range<usize>
+    pub inner: T,
+    pub range: Range<usize>
+}
+
+impl<T: Clone> Clone for Positioned<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            range: self.range.clone(),
+        }
+    } 
+}
+
+impl<T: Debug> Debug for Positioned<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        self.inner.fmt(f)
+    }
 }
 
 impl<T> Deref for Positioned<T> {

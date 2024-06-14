@@ -1,4 +1,5 @@
 use crate::error::{Error, Positioned};
+use macros::*;
 
 pub struct Lexer {
     index: usize,
@@ -12,12 +13,25 @@ impl Lexer {
         Lexer { index: 0, program, tokens: Vec::new() }
     }
 
-    pub fn parse(&mut self) -> Vec<Token> {
+    pub fn parse(&mut self) -> Vec<Positioned<Token>> {
         self.tokens.clear();
 
         while let Some(next_char) = self.next() {
             match next_char {
-                ';' => self.push(Token::Semicolon)
+                ';' => self.push(Token::Semicolon),
+
+                '+' => self.push(Token::Plus),
+                '-' => self.push(Token::Minus),
+                '/' => self.push(Token::Slash),
+                '*' => self.push(Token::Asterisk),
+
+                '(' => self.push(Token::CloseParen),
+                ')' => self.push(Token::OpenParen),
+
+                '%' => self.push(Token::Percent),
+
+                '*' => self.push(Token::Carat),
+                '&' => match_two!(self, '&', And),
 
                 '0'..='9' => {
                     let start = self.index;
@@ -56,17 +70,24 @@ impl Lexer {
 
     pub fn next(&mut self) -> Option<char> {
         self.index += 1;
-        match self.program.len() > self.index {
+        match self.program.len() >= self.index {
             true => Some(self.program[self.index - 1]),
             false => None,
         } 
     }
 
-    pub fn peek(&mut self) -> Option<char> {
+    pub fn peek(&self) -> Option<char> {
         match self.program.len() > self.index {
             true => Some(self.program[self.index]),
             false => None
         } 
+    }
+
+    pub fn matches(&self, c: char) -> bool {
+        match self.peek() {
+            Some(peeked) => peeked == c,
+            None => false,
+        }
     }
 }
 
@@ -83,7 +104,7 @@ impl IsNumeric for Option<char> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Literal(u8),
     Identifier(String),
@@ -99,7 +120,37 @@ pub enum Token {
     Or,
 
     Plus,
-    Add,
+    Minus,
     Asterisk,
     Slash,
+}
+
+pub mod macros {
+    macro_rules! match_tokens {
+        ($s:ident, $tokens:expr, $base_token:ident, $($extra_char:literal => $extra_token:ident),*) => {
+            {
+                let mut base = true;
+                $(
+                    if $s.matches($extra_char)? {
+                        $tokens.push($s.wrap(Token::$extra_token));
+                        base = false;
+                    }
+                )*
+                if base {
+                    $tokens.push($s.wrap(Token::$base_token));
+                }
+            }
+        }
+    }
+
+    macro_rules! match_two {
+        ($s:ident, $add_char:expr, $token:ident) => {{
+            if $s.matches($add_char) {
+                $s.push(Token::$token)
+            }
+        }};
+    }
+
+    pub(crate) use match_tokens;
+    pub(crate) use match_two;
 }
