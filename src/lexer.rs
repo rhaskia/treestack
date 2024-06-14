@@ -1,4 +1,5 @@
 use crate::error::{Error, Positioned};
+use strum::EnumIs;
 use macros::*;
 
 pub struct Lexer {
@@ -24,33 +25,55 @@ impl Lexer {
                 '-' => self.push(Token::Minus),
                 '/' => self.push(Token::Slash),
                 '*' => self.push(Token::Asterisk),
+                '%' => self.push(Token::Percent),
 
                 '(' => self.push(Token::CloseParen),
                 ')' => self.push(Token::OpenParen),
 
-                '%' => self.push(Token::Percent),
+                '}' => self.push(Token::CloseBrace),
+                '{' => self.push(Token::OpenBrace),
 
-                '*' => self.push(Token::Carat),
+                '.' => self.push(Token::Period),
+
                 '&' => match_two!(self, '&', And),
 
                 '0'..='9' => {
                     let start = self.index;
                     let mut raw_number = String::from(next_char);
+
                     while self.peek().is_numeric() {
                         raw_number.push(self.next().unwrap()); 
                     }
+
                     let number = raw_number.parse().unwrap();
                     self.push_long(Token::Literal(number), start);
                 }
 
                 'a'..='z' | 'A'..='Z' => {
-                    let identifier = String::new();
+                    let start = self.index;
+                    let mut word = String::from(next_char);
+
+                    while self.peek().map(|c| c.is_alphabetic()).unwrap_or(false) {
+                        word.push(self.next().unwrap());
+                    }
+
+                    let token = self.match_keyword(&word).unwrap_or(Token::Word(word));
+                    self.push_long(token, start)
                 }
                 _ => {} 
             };
         }             
 
         self.tokens.clone()
+    }
+
+    pub fn match_keyword(&mut self, word: &str) -> Option<Token> {
+       match word {
+           "if" => Some(Token::Keyword(Keyword::If)),
+           "else" => Some(Token::Keyword(Keyword::Else)),
+           "while" => Some(Token::Keyword(Keyword::While)),
+           _ => None
+       } 
     }
 
     pub fn push(&mut self, token: Token) {
@@ -104,17 +127,28 @@ impl IsNumeric for Option<char> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum Keyword {
+    If,
+    Else,
+    While,
+}
+
+#[derive(Debug, Clone, EnumIs, PartialEq)]
 pub enum Token {
     Literal(u8),
-    Identifier(String),
+    Word(String),
+    Keyword(Keyword),
     
     OpenParen,
     CloseParen,
+
+    OpenBrace,
+    CloseBrace,
+
     Semicolon,
 
     Percent,
-    Carat,
 
     And,
     Or,
@@ -123,6 +157,18 @@ pub enum Token {
     Minus,
     Asterisk,
     Slash,
+
+    Period,
+}
+
+impl Token {
+    pub fn is_op(&self) -> bool {
+        use Token::*;
+        match self {
+            Percent | And | Or | Plus | Minus | Asterisk | Slash => true,
+            _ => false
+        }
+    }
 }
 
 pub mod macros {

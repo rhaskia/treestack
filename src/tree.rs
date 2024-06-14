@@ -1,4 +1,4 @@
-struct Node<T> {
+struct TreeNode<T> {
     val: T,
-    children: Vec<Node<T>>, 
+    children: Vec<TreeNode<T>>, 
 }

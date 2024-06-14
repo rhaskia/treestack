@@ -1,6 +1,7 @@
 use std::ops::{Range, Deref, DerefMut};
 use std::fmt::{Debug, Formatter};
 
+#[derive(Debug)]
 pub struct Error {
     pub message: String,
     pub range: Range<usize>
@@ -9,6 +10,10 @@ pub struct Error {
 pub struct Positioned<T> {
     pub inner: T,
     pub range: Range<usize>
+}
+
+pub fn position<T>(inner: T, range: Range<usize>) -> Positioned<T> {
+    Positioned { inner, range }
 }
 
 impl<T: Clone> Clone for Positioned<T> {
