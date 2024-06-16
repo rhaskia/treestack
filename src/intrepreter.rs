@@ -30,7 +30,7 @@ impl Interpreter {
                         }
                     }
                 }
-                Node::Function => todo!(),
+                Node::Function(f) => todo!(),
             }
         }
     }
