@@ -14,7 +14,7 @@ impl Compiler {
 
         for instruction in program {
             match instruction {
-                
+                _ => {}
             }
         }
 

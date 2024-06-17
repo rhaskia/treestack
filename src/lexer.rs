@@ -34,6 +34,7 @@ impl Lexer {
                 '{' => self.push(Token::OpenBrace),
 
                 '.' => self.push(Token::Period),
+                '^' => self.push(Token::Carat),
 
                 '&' => match_two!(self, '&', And),
 
@@ -136,7 +137,7 @@ pub enum Keyword {
 
 #[derive(Debug, Clone, EnumIs, PartialEq)]
 pub enum Token {
-    Literal(u8),
+    Literal(i64),
     Word(String),
     Keyword(Keyword),
     
@@ -149,6 +150,7 @@ pub enum Token {
     Semicolon,
 
     Percent,
+    Carat,
 
     And,
     Or,
@@ -165,7 +167,7 @@ impl Token {
     pub fn is_op(&self) -> bool {
         use Token::*;
         match self {
-            Percent | And | Or | Plus | Minus | Asterisk | Slash => true,
+            Percent | And | Or | Plus | Minus | Asterisk | Slash | Carat => true,
             _ => false
         }
     }

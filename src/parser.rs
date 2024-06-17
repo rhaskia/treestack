@@ -100,7 +100,7 @@ impl Parser {
 #[derive(Debug)]
 pub enum Node {
     Expression(Vec<Positioned<Node>>),
-    Push(u8),
+    Push(i64),
     Operator(Token),
     Call(String),
     While(Vec<Positioned<Node>>),

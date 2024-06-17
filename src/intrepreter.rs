@@ -4,20 +4,21 @@ use crate::parser::Node;
 use crate::tree::TreeNode;
 
 pub struct Interpreter {
-    stack: TreeNode<u8>,
-    pointer: usize,
+    stack: TreeNode<i64>,
+    pointers: Vec<usize>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self { stack: TreeNode::new(), pointer: 0 }
+        Self { stack: TreeNode::new(), pointers: Vec::new() }
     }
 
     pub fn parse(&mut self, instructions: &Vec<Positioned<Node>>) {
         for instruction in instructions {
+            println!("{:?}", self.stack);
             match &instruction.inner {
                 Node::Expression(expr) => self.parse(expr),
-                Node::Push(u) => self.stack.push_raw(*u),
+                Node::Push(u) => self.push_raw(*u),
                 Node::Operator(op) => self.eval_op(op.clone()),
                 Node::Call(call) => self.call(call),
                 Node::While(expr) => while self.truthy() { self.parse(expr) },
@@ -40,12 +41,15 @@ impl Interpreter {
             "SWAP" => {
                 let first = self.pop();
                 let second = self.pop();
-                self.stack.push(first);
-                self.stack.push(second);
+                self.push(first);
+                self.push(second);
             }
             "DUP" => {
                 let first = self.stack.last().unwrap().clone();
-                self.stack.push(first);
+                self.push(first);
+            }
+            "v" => {
+                self.pointers.push(0);
             }
             _ => {
                 // TODO check functions
@@ -53,9 +57,25 @@ impl Interpreter {
         }
     }
 
+    pub fn current(&mut self) -> &mut TreeNode<i64> {
+        let mut head = &mut self.stack;
+        for pointer in &self.pointers {
+            head = &mut head.children[*pointer];
+        }
+        head
+    }
+
     pub fn truthy(&self) -> bool {
         self.stack.last().map(|v| v.val > 0).unwrap_or(false)
     }
+
+    pub fn push_raw(&mut self, val: i64) {
+        self.push(TreeNode { val, children: Vec::new() })
+    }
+
+    pub fn push(&mut self, node: TreeNode<i64>) {
+        self.current().push(node)
+    } 
 
     pub fn eval_op(&mut self, op: Token) {
         match op {
@@ -67,20 +87,21 @@ impl Interpreter {
             Token::Percent => todo!(),
             Token::And => todo!(),
             Token::Or => todo!(),
+            Token::Carat => { self.pointers.pop(); },
             Token::Plus => {
                 let lhs = self.pop();
                 let rhs = self.pop();
-                self.stack.push(lhs + rhs);
+                self.push(lhs + rhs);
             },
             Token::Minus => {
                 let lhs = self.pop();
                 let rhs = self.pop();
-                self.stack.push(lhs - rhs);
+                self.push(lhs - rhs);
             },
             Token::Asterisk => {
                 let lhs = self.pop();
                 let rhs = self.pop();
-                self.stack.push(lhs * rhs);
+                self.push(lhs * rhs);
             }
             Token::Slash => todo!(),
             Token::Period => print!("{}", self.pop()),
@@ -88,7 +109,7 @@ impl Interpreter {
         }
     }
 
-    pub fn pop(&mut self) -> TreeNode<u8> {
-        self.stack.pop().unwrap()
+    pub fn pop(&mut self) -> TreeNode<i64> {
+        self.current().pop().unwrap()
     }
 }
