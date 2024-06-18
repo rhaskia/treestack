@@ -15,8 +15,9 @@ impl Interpreter {
 
     pub fn parse(&mut self, instructions: &Vec<Positioned<Node>>) {
         for instruction in instructions {
-            println!("{:?}", self.stack);
+            println!("{}", self.stack);
             println!("{:?}", self.pointers);
+            println!("{:?}", instruction);
             match &instruction.inner {
                 Node::Expression(expr) => self.parse(expr),
                 Node::Push(u) => self.push_raw(*u),

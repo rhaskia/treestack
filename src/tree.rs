@@ -1,9 +1,12 @@
-use std::{ops::{Add, Deref, DerefMut, Mul, Sub}, fmt::Display};
+use std::{
+    fmt::{Display, Formatter},
+    ops::{Add, Deref, DerefMut, Mul, Sub},
+};
 
 #[derive(Debug, Clone)]
 pub struct TreeNode<T> {
     pub val: T,
-    pub children: Vec<TreeNode<T>>, 
+    pub children: Vec<TreeNode<T>>,
 }
 
 impl<T> TreeNode<T> {
@@ -16,17 +19,38 @@ impl<T> TreeNode<T> {
     }
 
     pub fn eval(self, rhs: Self, op: fn(T, T) -> T) -> Self {
-        let children = self.children
-            .into_iter()
-            .zip(rhs.children)
-            .map(|(l, r)| l.eval(r, op))
-            .collect();
+        let children =
+            self.children.into_iter().zip(rhs.children).map(|(l, r)| l.eval(r, op)).collect();
         Self { val: op(self.val, rhs.val), children }
     }
+}
 
-    pub fn display_tree(&self, depth: usize) -> String {
+impl<T: Display> Display for TreeNode<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let output = &self.draw(0);
+        write!(f, "{}\x1b[0m", output)
+    }
+}
 
-    } 
+impl<T: Display> TreeNode<T> {
+    fn draw(&self, depth: usize) -> String {
+        if self.children.is_empty() {
+            let val = format!("{}", self.val);
+            return val;
+        }
+
+        let code = format!("\x1b[38;5;{}m", depth + 1);
+        let children = self.children
+            .iter()
+            .map(|n| n.draw(depth + 1))
+            .collect::<Vec<String>>().join(", ");
+
+        let children = format!("{code}[{}{code}]\x1b", children);
+
+        if depth == 0 { return children };
+
+        format!("{}{}", self.val, children)
+    }
 }
 
 impl<T: Mul<Output = T>> Mul for TreeNode<T> {
@@ -49,13 +73,7 @@ impl<T: Sub<Output = T>> Sub for TreeNode<T> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-       Self { val: self.val - rhs.val, children: self.children } // TODO children mult 
-    }
-}
-
-impl<T: Display> Display for TreeNode<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.val.fmt(f)
+        Self { val: self.val - rhs.val, children: self.children } // TODO children mult
     }
 }
 
