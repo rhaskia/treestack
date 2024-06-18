@@ -40,12 +40,13 @@ impl<T: Display> TreeNode<T> {
         }
 
         let code = format!("\x1b[38;5;{}m", depth + 1);
+        let above = format!("\x1b[38;5;{}m", depth);
         let children = self.children
             .iter()
             .map(|n| n.draw(depth + 1))
             .collect::<Vec<String>>().join(", ");
 
-        let children = format!("{code}[{}{code}]\x1b", children);
+        let children = format!("{code}[{}]{above}", children);
 
         if depth == 0 { return children };
 
