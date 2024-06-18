@@ -10,12 +10,13 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self { stack: TreeNode::new(), pointers: Vec::new() }
+        Self { stack: TreeNode::default(), pointers: Vec::new() }
     }
 
     pub fn parse(&mut self, instructions: &Vec<Positioned<Node>>) {
         for instruction in instructions {
             println!("{:?}", self.stack);
+            println!("{:?}", self.pointers);
             match &instruction.inner {
                 Node::Expression(expr) => self.parse(expr),
                 Node::Push(u) => self.push_raw(*u),
@@ -70,7 +71,7 @@ impl Interpreter {
     }
 
     pub fn push_raw(&mut self, val: i64) {
-        self.push(TreeNode { val, children: Vec::new() })
+        self.push(TreeNode { val, children: Vec::new() });
     }
 
     pub fn push(&mut self, node: TreeNode<i64>) {

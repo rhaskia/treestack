@@ -10,13 +10,30 @@ impl<T> TreeNode<T> {
     pub fn push_raw(&mut self, item: T) {
         self.children.push(TreeNode { val: item, children: Vec::new() })
     }
+
+    pub fn new(item: T) -> Self {
+        TreeNode { val: item, children: Vec::new() }
+    }
+
+    pub fn eval(self, rhs: Self, op: fn(T, T) -> T) -> Self {
+        let children = self.children
+            .into_iter()
+            .zip(rhs.children)
+            .map(|(l, r)| l.eval(r, op))
+            .collect();
+        Self { val: op(self.val, rhs.val), children }
+    }
+
+    pub fn display_tree(&self, depth: usize) -> String {
+
+    } 
 }
 
 impl<T: Mul<Output = T>> Mul for TreeNode<T> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
-       Self { val: self.val * rhs.val, children: self.children } // TODO children mult 
+        self.eval(rhs, Mul::mul)
     }
 }
 
@@ -24,7 +41,7 @@ impl<T: Add<Output = T>> Add for TreeNode<T> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-       Self { val: self.val + rhs.val, children: self.children } // TODO children mult 
+        self.eval(rhs, Add::add)
     }
 }
 
@@ -43,7 +60,7 @@ impl<T: Display> Display for TreeNode<T> {
 }
 
 impl<T: Default> TreeNode<T> {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         Self { val: T::default(), children: Vec::new() }
     }
 }
