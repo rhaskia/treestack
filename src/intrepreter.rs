@@ -49,8 +49,6 @@ impl Interpreter {
                 self.push(first);
             }
             "v" => {
-                let last = self.current().children.len() - 1;
-                self.pointers.push(last);
             }
             _ => {
                 // TODO check functions
@@ -88,7 +86,6 @@ impl Interpreter {
             Token::Percent => todo!(),
             Token::And => todo!(),
             Token::Or => todo!(),
-            Token::Carat => { self.pointers.pop(); },
             Token::Plus => {
                 let lhs = self.pop();
                 let rhs = self.pop();
@@ -106,6 +103,11 @@ impl Interpreter {
             }
             Token::Slash => todo!(),
             Token::Period => print!("{}", self.pop()),
+            Token::CloseBracket => { self.pointers.pop(); },
+            Token::OpenBracket => {
+                let last = self.current().children.len() - 1;
+                self.pointers.push(last);
+            }
             _ => {}
         }
     }

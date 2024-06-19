@@ -33,6 +33,9 @@ impl Lexer {
                 '}' => self.push(Token::CloseBrace),
                 '{' => self.push(Token::OpenBrace),
 
+                ']' => self.push(Token::CloseBracket),
+                '[' => self.push(Token::OpenBracket),
+
                 '.' => self.push(Token::Period),
                 '^' => self.push(Token::Carat),
 
@@ -146,6 +149,9 @@ pub enum Token {
 
     OpenBrace,
     CloseBrace,
+
+    OpenBracket,
+    CloseBracket,
 
     Semicolon,
 
