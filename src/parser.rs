@@ -97,7 +97,7 @@ impl Parser {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Node {
     Expression(Vec<Positioned<Node>>),
     Push(i64),
@@ -105,5 +105,5 @@ pub enum Node {
     Call(String),
     While(Vec<Positioned<Node>>),
     If(Vec<Positioned<Node>>, Option<Vec<Positioned<Node>>>),
-    Function(Vec<Positioned<Node>>),
+    Function(String, Vec<Positioned<Node>>),
 }

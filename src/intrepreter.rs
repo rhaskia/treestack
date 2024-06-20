@@ -2,15 +2,17 @@ use crate::error::Positioned;
 use crate::lexer::Token;
 use crate::parser::Node;
 use crate::tree::TreeNode;
+use std::collections::HashMap;
 
 pub struct Interpreter {
     stack: TreeNode<i64>,
+    functions: HashMap<String, Vec<Positioned<Node>>>,
     pointers: Vec<usize>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self { stack: TreeNode::default(), pointers: Vec::new() }
+        Self { stack: TreeNode::default(), pointers: Vec::new(), functions: HashMap::new() }
     }
 
     pub fn parse(&mut self, instructions: &Vec<Positioned<Node>>) {
@@ -30,9 +32,9 @@ impl Interpreter {
                         }
                     }
                 }
-                Node::Function(f) => todo!(),
+                Node::Function(name, f) => { self.functions.insert(name.clone(), f.clone()); }
             }
-            println!("{:?}: {}, {:?}", instruction, self.stack, self.pointers);
+            print!("{:?}: {}, {:?}", instruction, self.stack, self.pointers);
         }
     }
 
@@ -51,7 +53,6 @@ impl Interpreter {
             "v" => {
             }
             _ => {
-                // TODO check functions
             }
         }
     }

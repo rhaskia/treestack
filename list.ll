@@ -5,6 +5,11 @@
 declare i32 @puts(i8* nocapture) nounwind
 
 @.hello = private unnamed_addr constant [13 x i8] c"hello world\0A\00"
+@stack =  
+
+define void @stackpush() {
+    
+}
 
 define void @main() {
     %bar = alloca %Node, i32 100
