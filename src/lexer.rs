@@ -37,9 +37,31 @@ impl Lexer {
                 '[' => self.push(Token::OpenBracket),
 
                 '.' => self.push(Token::Period),
-                '^' => self.push(Token::Carat),
+                '^' => {
+                    if self.peek().is_alphabetic() {
+                        let start = self.index;
+                        let word = self.next_word();
+                        self.push_long(Token::Pointer(word, PointerAction::Jump), start);
+                        continue;
+                    }
 
-                '&' => match_two!(self, '&', And),
+                    self.push(Token::Carat);
+                },
+
+                '&' => {
+                    if self.peek().is_alphabetic() {
+                        let start = self.index;
+                        let word = self.next_word();
+                        self.push_long(Token::Pointer(word, PointerAction::Create), start);
+                        continue;
+                    }
+
+                    if self.matches('&') {
+                        self.push(Token::And);
+                    } else {
+                        self.push(Token::Ampersand);
+                    }
+                }
 
                 '0'..='9' => {
                     let start = self.index;
@@ -55,12 +77,8 @@ impl Lexer {
 
                 'a'..='z' | 'A'..='Z' => {
                     let start = self.index;
-                    let mut word = String::from(next_char);
-
-                    while self.peek().map(|c| c.is_alphabetic()).unwrap_or(false) {
-                        word.push(self.next().unwrap());
-                    }
-
+                    let mut word = self.next_word();
+                    word.insert(0, next_char);
                     let token = self.match_keyword(&word).unwrap_or(Token::Word(word));
                     self.push_long(token, start)
                 }
@@ -116,16 +134,34 @@ impl Lexer {
             None => false,
         }
     }
+
+    pub fn next_word(&mut self) -> String {
+        let mut word = String::new();
+
+        while self.peek().map(|c| c.is_alphabetic()).unwrap_or(false) {
+            word.push(self.next().unwrap());
+        }
+
+        word
+    }
 }
 
-trait IsNumeric {
+trait OptionChar {
     fn is_numeric(&self) -> bool;
+    fn is_alphabetic(&self) -> bool;
 }
 
-impl IsNumeric for Option<char> {
+impl OptionChar for Option<char> {
     fn is_numeric(&self) -> bool {
         match self {
             Some(c) => c.is_numeric(),
+            None => false,
+        }
+    }
+
+    fn is_alphabetic(&self) -> bool {
+        match self {
+            Some(c) => c.is_alphabetic(),
             None => false,
         }
     }
@@ -165,33 +201,33 @@ pub enum Token {
     Minus,
     Asterisk,
     Slash,
+    Ampersand,
 
     Period,
+
+    Pointer(String, PointerAction)
 }
 
-impl Token {
-    pub fn is_op(&self) -> bool {
-        use Token::*;
-        match self {
-            Percent | And | Or | Plus | Minus | Asterisk | Slash | Carat => true,
-            _ => false
-        }
-    }
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum PointerAction {
+    Jump,
+    Create,
+    Push,
 }
 
 pub mod macros {
     macro_rules! match_tokens {
-        ($s:ident, $tokens:expr, $base_token:ident, $($extra_char:literal => $extra_token:ident),*) => {
+        ($s:ident, $base_token:ident, $($extra_char:literal => $extra_token:ident),*) => {
             {
                 let mut base = true;
                 $(
-                    if $s.matches($extra_char)? {
-                        $tokens.push($s.wrap(Token::$extra_token));
+                    if $s.matches($extra_char) {
+                        $s.push(Token::$extra_token);
                         base = false;
                     }
                 )*
                 if base {
-                    $tokens.push($s.wrap(Token::$base_token));
+                    $s.push(Token::$base_token);
                 }
             }
         }

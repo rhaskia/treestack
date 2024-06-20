@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::error::{Error, Positioned, position};
-use crate::lexer::{Keyword, Token};
+use crate::lexer::{Keyword, Token, PointerAction};
 use fehler::throws;
 
 pub struct Parser {
@@ -31,6 +31,7 @@ impl Parser {
                 Token::Word(w) => expr.push(position(Node::Call(w), range)),
                 Token::Keyword(k) => expr.push(self.statement(k)?),
                 Token::CloseBrace => break,
+                Token::Pointer(name, action) => expr.push(position(Node::Pointer(name, action), range)),
                 op => expr.push(position(Node::Operator(op), range)),
             }
         }
@@ -105,5 +106,7 @@ pub enum Node {
     Call(String),
     While(Vec<Positioned<Node>>),
     If(Vec<Positioned<Node>>, Option<Vec<Positioned<Node>>>),
+    Pointer(String, PointerAction),
     Function(String, Vec<Positioned<Node>>),
 }
+

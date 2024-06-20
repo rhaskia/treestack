@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Deref, DerefMut, Mul, Sub},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct TreeNode<T> {
     pub val: T,
     pub children: Vec<TreeNode<T>>,

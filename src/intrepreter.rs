@@ -1,18 +1,22 @@
 use crate::error::Positioned;
-use crate::lexer::Token;
+use crate::lexer::{Token, PointerAction};
 use crate::parser::Node;
 use crate::tree::TreeNode;
 use std::collections::HashMap;
 
+type Pointer = Vec<usize>;
+
+#[derive(Default)]
 pub struct Interpreter {
     stack: TreeNode<i64>,
     functions: HashMap<String, Vec<Positioned<Node>>>,
-    pointers: Vec<usize>,
+    pointer: Pointer,
+    pointers: HashMap<String, Pointer>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self { stack: TreeNode::default(), pointers: Vec::new(), functions: HashMap::new() }
+        Self { ..Default::default() }
     }
 
     pub fn parse(&mut self, instructions: &Vec<Positioned<Node>>) {
@@ -33,8 +37,9 @@ impl Interpreter {
                     }
                 }
                 Node::Function(name, f) => { self.functions.insert(name.clone(), f.clone()); }
+                Node::Pointer(name, action) => self.call_pointer(name.clone(), *action),
             }
-            print!("{:?}: {}, {:?}", instruction, self.stack, self.pointers);
+            println!("{:?}: {}, {:?}", instruction, self.stack, self.pointer);
         }
     }
 
@@ -57,9 +62,19 @@ impl Interpreter {
         }
     }
 
+    pub fn call_pointer(&mut self, name: String, action: PointerAction) {
+        match action {
+            PointerAction::Jump => {
+                self.pointer = self.pointers[&name].clone();
+            },
+            PointerAction::Create => { self.pointers.insert(name, self.pointer.clone()); },
+            PointerAction::Push => todo!(),
+        }
+    }
+
     pub fn current(&mut self) -> &mut TreeNode<i64> {
         let mut head = &mut self.stack;
-        for pointer in &self.pointers {
+        for pointer in &self.pointer {
             head = &mut head.children[*pointer];
         }
         head
@@ -104,10 +119,10 @@ impl Interpreter {
             }
             Token::Slash => todo!(),
             Token::Period => print!("{}", self.pop()),
-            Token::CloseBracket => { self.pointers.pop(); },
+            Token::CloseBracket => { self.pointer.pop(); },
             Token::OpenBracket => {
                 let last = self.current().children.len() - 1;
-                self.pointers.push(last);
+                self.pointer.push(last);
             }
             _ => {}
         }
