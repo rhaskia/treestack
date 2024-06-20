@@ -24,7 +24,6 @@ impl Lexer {
                 '+' => self.push(Token::Plus),
                 '-' => self.push(Token::Minus),
                 '/' => self.push(Token::Slash),
-                '*' => self.push(Token::Asterisk),
                 '%' => self.push(Token::Percent),
 
                 '(' => self.push(Token::CloseParen),
@@ -37,6 +36,8 @@ impl Lexer {
                 '[' => self.push(Token::OpenBracket),
 
                 '.' => self.push(Token::Period),
+
+                // DRY this
                 '^' => {
                     if self.peek().is_alphabetic() {
                         let start = self.index;
@@ -46,6 +47,17 @@ impl Lexer {
                     }
 
                     self.push(Token::Carat);
+                },
+
+                '*' => {
+                    if self.peek().is_alphabetic() {
+                        let start = self.index;
+                        let word = self.next_word();
+                        self.push_long(Token::Pointer(word, PointerAction::Push), start);
+                        continue;
+                    }
+
+                    self.push(Token::Asterisk);
                 },
 
                 '&' => {

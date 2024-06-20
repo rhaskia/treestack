@@ -19,27 +19,27 @@ impl Interpreter {
         Self { ..Default::default() }
     }
 
-    pub fn parse(&mut self, instructions: &Vec<Positioned<Node>>) {
-        for instruction in instructions {
-            match &instruction.inner {
+    pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) {
+        for instruction in instructions.into_iter() {
+            println!("{:?}: {}, {:?}", instruction, self.stack, self.pointer);
+            match instruction.inner {
                 Node::Expression(expr) => self.parse(expr),
-                Node::Push(u) => self.push_raw(*u),
+                Node::Push(u) => self.push_raw(u),
                 Node::Operator(op) => self.eval_op(op.clone()),
-                Node::Call(call) => self.call(call),
-                Node::While(expr) => while self.truthy() { self.parse(expr) },
+                Node::Call(call) => self.call(&call),
+                Node::While(expr) => while self.truthy() { self.parse(expr.clone()) },
                 Node::If(if_expr, else_expr) => {
                     if self.truthy() {
-                        self.parse(if_expr)
+                        self.parse(if_expr.clone())
                     } else {
                         if let Some(expr) = else_expr {
-                            self.parse(expr);
+                            self.parse(expr.clone());
                         }
                     }
                 }
-                Node::Function(name, f) => { self.functions.insert(name.clone(), f.clone()); }
-                Node::Pointer(name, action) => self.call_pointer(name.clone(), *action),
+                Node::Function(name, f) => { self.functions.insert(name, f); }
+                Node::Pointer(name, action) => self.call_pointer(name, action),
             }
-            println!("{:?}: {}, {:?}", instruction, self.stack, self.pointer);
         }
     }
 
@@ -55,9 +55,13 @@ impl Interpreter {
                 let first = self.stack.last().unwrap().clone();
                 self.push(first);
             }
-            "v" => {
-            }
             _ => {
+                let function = match self.functions.get(call) {
+                    Some(f) => f,
+                    None => return,
+                };
+                
+                self.parse(function.clone());
             }
         }
     }
@@ -68,13 +72,21 @@ impl Interpreter {
                 self.pointer = self.pointers[&name].clone();
             },
             PointerAction::Create => { self.pointers.insert(name, self.pointer.clone()); },
-            PointerAction::Push => todo!(),
+            PointerAction::Push => { 
+                let pointer = self.pointers[&name].clone();
+                let value = self.at_pointer(pointer).clone();
+                self.push(value)
+            },
         }
     }
 
     pub fn current(&mut self) -> &mut TreeNode<i64> {
+        self.at_pointer(self.pointer.clone())
+    }
+
+    pub fn at_pointer(&mut self, pointer: Pointer) -> &mut TreeNode<i64> {
         let mut head = &mut self.stack;
-        for pointer in &self.pointer {
+        for pointer in &pointer {
             head = &mut head.children[*pointer];
         }
         head

@@ -13,7 +13,7 @@ fn main() {
     println!("{tokens:?}");
     let ast = parser::Parser::new(tokens).parse().unwrap();
     println!("{ast:?}");
-    intrepreter::Interpreter::new().parse(&ast);
+    intrepreter::Interpreter::new().parse(ast);
 
     // let llvm_ir = compiler::Compiler::new().compile(&ast);
     // std::fs::write("./output.ll", llvm_ir).unwrap();
