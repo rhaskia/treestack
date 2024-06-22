@@ -3,8 +3,25 @@ use crate::lexer::{Token, PointerAction};
 use crate::parser::Node;
 use crate::tree::TreeNode;
 use std::collections::HashMap;
+use std::ops;
+use std::io::{Read, stdin};
 
-type Pointer = Vec<usize>;
+#[derive(Default, Clone, Debug)]
+struct Pointer {
+    pub tree: Vec<usize>,
+    pub branch: usize,
+}
+
+impl Pointer {
+    pub fn open_branch(&mut self) {
+        self.tree.push(self.branch);
+        self.branch = 0;
+    }
+
+    pub fn close_branch(&mut self) {
+        self.branch = self.tree.pop().unwrap(); // Error
+    } 
+}
 
 #[derive(Default)]
 pub struct Interpreter {
@@ -21,7 +38,7 @@ impl Interpreter {
 
     pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) {
         for instruction in instructions.into_iter() {
-            println!("{:?}: {}, {:?}", instruction, self.stack, self.pointer);
+            let inst = format!("{:?}: ", instruction);
             match instruction.inner {
                 Node::Expression(expr) => self.parse(expr),
                 Node::Push(u) => self.push_raw(u),
@@ -40,20 +57,25 @@ impl Interpreter {
                 Node::Function(name, f) => { self.functions.insert(name, f); }
                 Node::Pointer(name, action) => self.call_pointer(name, action),
             }
+            println!("{inst}: {}, {:?}", self.stack, self.pointer);
         }
     }
 
     pub fn call(&mut self, call: &str) {
         match call {
-            "SWAP" => {
+            "swap" => {
                 let first = self.pop();
                 let second = self.pop();
                 self.push(first);
                 self.push(second);
             }
-            "DUP" => {
+            "dup" => {
                 let first = self.stack.last().unwrap().clone();
                 self.push(first);
+            }
+            "system" => {
+                let call = self.pop();
+                // unix call
             }
             _ => {
                 let function = match self.functions.get(call) {
@@ -86,7 +108,7 @@ impl Interpreter {
 
     pub fn at_pointer(&mut self, pointer: Pointer) -> &mut TreeNode<i64> {
         let mut head = &mut self.stack;
-        for pointer in &pointer {
+        for pointer in &pointer.tree {
             head = &mut head.children[*pointer];
         }
         head
@@ -105,42 +127,42 @@ impl Interpreter {
     } 
 
     pub fn eval_op(&mut self, op: Token) {
-        match op {
-            Token::OpenParen => todo!(),
-            Token::CloseParen => todo!(),
-            Token::OpenBrace => todo!(),
-            Token::CloseBrace => todo!(),
-            Token::Semicolon => todo!(),
-            Token::Percent => todo!(),
-            Token::And => todo!(),
-            Token::Or => todo!(),
-            Token::Plus => {
-                let lhs = self.pop();
-                let rhs = self.pop();
-                self.push(lhs + rhs);
-            },
-            Token::Minus => {
-                let lhs = self.pop();
-                let rhs = self.pop();
-                self.push(lhs - rhs);
-            },
-            Token::Asterisk => {
-                let lhs = self.pop();
-                let rhs = self.pop();
-                self.push(lhs * rhs);
+        use Token::*;
+        match &op {
+            Period => print!("{}", self.pop()),
+            Comma => {}, // Read Char (not top priority rn)
+            OpenBracket => {
+                self.pointer.open_branch(); 
             }
-            Token::Slash => todo!(),
-            Token::Period => print!("{}", self.pop()),
-            Token::CloseBracket => { self.pointer.pop(); },
-            Token::OpenBracket => {
-                let last = self.current().children.len() - 1;
-                self.pointer.push(last);
+            CloseBracket => self.pointer.close_branch(),
+            OpenParen => self.pointer.branch += 1,
+            CloseParen => self.pointer.branch -= 1,
+            Semicolon => todo!(),
+            Plus | Asterisk | Minus | Slash | Or | And | Percent => {
+                let lhs = self.pop();
+                let rhs = self.pop();
+                let func = op.func();
+                self.push(lhs.eval(rhs, func));
+            },
+            _ => { 
+                println!("Unused Operator: {op:?}"); 
             }
-            _ => {}
         }
     }
 
     pub fn pop(&mut self) -> TreeNode<i64> {
         self.current().pop().unwrap()
+    }
+}
+
+impl Token {
+    pub fn func(&self) -> fn(i64, i64) -> i64 {
+        use Token::*;
+        match self {
+            Plus => ops::Add::add,
+            Asterisk => ops::Mul::mul,
+            Minus => ops::Sub::sub,
+            _ => unreachable!(),
+        }
     }
 }

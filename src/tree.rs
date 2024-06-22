@@ -1,9 +1,9 @@
 use std::{
-    fmt::{Display, Formatter},
+    fmt::{Display, Formatter, Debug},
     ops::{Add, Deref, DerefMut, Mul, Sub},
 };
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct TreeNode<T> {
     pub val: T,
     pub children: Vec<TreeNode<T>>,
@@ -48,7 +48,7 @@ impl<T: Display> TreeNode<T> {
 
         let children = format!("{code}[{}]{above}", children);
 
-        if depth == 0 { return children };
+        // if depth == 0 { return children };
 
         format!("{}{}", self.val, children)
     }

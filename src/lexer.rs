@@ -36,6 +36,7 @@ impl Lexer {
                 '[' => self.push(Token::OpenBracket),
 
                 '.' => self.push(Token::Period),
+                ',' => self.push(Token::Comma),
 
                 // DRY this
                 '^' => {
@@ -216,6 +217,7 @@ pub enum Token {
     Ampersand,
 
     Period,
+    Comma,
 
     Pointer(String, PointerAction)
 }
