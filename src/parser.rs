@@ -42,10 +42,10 @@ impl Parser {
     #[throws]
     pub fn statement(&mut self, keyword: Keyword) -> Positioned<Node> {
         let start = self.previous().unwrap().range.start;
-        self.ensure_next(Token::OpenBrace)?;
 
         let node = match keyword {
             Keyword::If => {
+                self.ensure_next(Token::OpenBrace)?;
                 let if_expr = self.expression()?;
                 let mut else_expr = None;
 
@@ -58,8 +58,18 @@ impl Parser {
                 Node::If(if_expr, else_expr)
             },
             Keyword::Else => unreachable!(),
-            Keyword::While => Node::While(self.expression()?),
-            Keyword::Function => Node::Function(String::from(""), vec![]),
+            Keyword::While => {
+                self.ensure_next(Token::OpenBrace)?;
+                Node::While(self.expression()?)
+            }
+            Keyword::Function => {
+                let name = self.next().unwrap();
+                if let Token::Word(word) = name.inner {
+                    Node::Function(word, self.expression()?)
+                } else {
+                    panic!()
+                }
+            },
         };
         let end = self.previous().unwrap().range.end;
 

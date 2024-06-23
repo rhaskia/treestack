@@ -100,6 +100,7 @@ impl Lexer {
                     let start = self.index;
                     let mut string = String::new();
                     while self.peek() != Some('"') {
+                        println!("{:?}", self.peek());
                         string.push(self.next().unwrap());
                     }
                     self.push_long(Token::String(string), start)

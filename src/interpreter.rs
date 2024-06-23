@@ -14,9 +14,9 @@ struct Pointer {
 }
 
 impl Pointer {
-    pub fn open_branch(&mut self) {
+    pub fn open_branch(&mut self, len: usize) {
         self.tree.push(self.branch);
-        self.branch = 0;
+        self.branch = len;
     }
 
     pub fn close_branch(&mut self) {
@@ -161,7 +161,8 @@ impl Interpreter {
             Period => print!("{}", self.pop()),
             Comma => {} // Read Char (not top priority rn)
             OpenBracket => {
-                self.pointer.open_branch();
+                let len = self.current().len();
+                self.pointer.open_branch(len);
             }
             CloseBracket => self.pointer.close_branch(),
             OpenParen => self.pointer.branch += 1,
