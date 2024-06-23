@@ -40,6 +40,7 @@ pub fn start_repl() {
             KeyCode::Backspace => { 
                 if cursor == 0 { continue; }
                 input.remove(cursor - 1);
+                cursor -= 1;
             },
             KeyCode::Left => if cursor != 0 { cursor -= 1; }
             KeyCode::Right => if cursor != input.len() { cursor += 1; }
@@ -53,10 +54,11 @@ pub fn start_repl() {
                 input = commands[commands.len() - scrollback].clone();
             }
             KeyCode::Enter => {
-                print!("\r\n");
+                print!("\n\r");
                 let tokens = Lexer::new(input.clone()).parse();
                 let ast = Parser::new(tokens).parse().unwrap();
-                interpreter.parse(ast);
+                let result = interpreter.parse(ast);
+                if let Err(msg) = result { println!("{msg}"); }
                 commands.push(input.clone());
                 input.clear();
                 cursor = 0;
@@ -65,7 +67,7 @@ pub fn start_repl() {
             _ => {} 
         }
 
-        print!("\r> {input}\r\x1b[{}C", cursor + 2);
+        print!("\x1b[2K\r> {input}\r\x1b[{}C", cursor + 2);
         let _ = stdout.flush();
     }
 

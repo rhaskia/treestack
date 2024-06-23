@@ -6,6 +6,9 @@ use std::collections::HashMap;
 use std::io::{stdin, Read};
 use std::ops;
 use syscalls::{raw_syscall, Sysno};
+use fehler::throws;
+
+type Error = String;
 
 #[derive(Default, Clone, Debug)]
 struct Pointer {
@@ -37,25 +40,27 @@ impl Interpreter {
         Self { ..Default::default() }
     }
 
+    #[throws]
     pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) {
         for instruction in instructions.into_iter() {
             let inst = format!("{:?}: ", instruction);
             match instruction.inner {
-                Node::Expression(expr) => self.parse(expr),
+                Node::Expression(expr) => self.parse(expr)?,
                 Node::Push(u) => self.push_raw(u),
-                Node::Operator(op) => self.eval_op(op.clone()),
-                Node::Call(call) => self.call(&call),
+                Node::String(string) => self.push_string(string),
+                Node::Operator(op) => self.eval_op(op.clone())?,
+                Node::Call(call) => self.call(&call)?,
                 Node::While(expr) => {
                     while self.truthy() {
-                        self.parse(expr.clone())
+                        self.parse(expr.clone())?
                     }
                 }
                 Node::If(if_expr, else_expr) => {
                     if self.truthy() {
-                        self.parse(if_expr.clone())
+                        self.parse(if_expr.clone())?
                     } else {
                         if let Some(expr) = else_expr {
-                            self.parse(expr.clone());
+                            self.parse(expr.clone())?;
                         }
                     }
                 }
@@ -68,11 +73,12 @@ impl Interpreter {
         }
     }
 
+    #[throws]
     pub fn call(&mut self, call: &str) {
         match call {
             "swap" => {
-                let first = self.pop();
-                let second = self.pop();
+                let first = self.pop()?;
+                let second = self.pop()?;
                 self.push(first);
                 self.push(second);
             }
@@ -85,12 +91,15 @@ impl Interpreter {
             "write" => {
             }
             "syscall" => {
-                let call = self.pop().val;
+                let call = self.pop()?.val;
                 unsafe { 
                     let result = raw_syscall!(Sysno::from(call as i32)); 
                     self.push_raw(result as i64); 
                 }
                 
+            }
+            "print" =>{
+                print!("{}", self.pop_string()?);
             }
             _ => {
                 let function = match self.functions.get(call) {
@@ -98,18 +107,19 @@ impl Interpreter {
                     None => return,
                 };
 
-                self.parse(function.clone());
+                self.parse(function.clone())?;
             }
         }
     }
 
+    #[throws]
     pub fn pop_string(&mut self) -> String {
-        let length = self.pop().val;
+        let length = self.pop()?.val;
         let mut string = String::new();
 
         for _ in 0..length {
-            let c = char::from_u32(self.pop().val as u32).unwrap();
-            string.push(c);
+            let c = char::from_u32(self.pop()?.val as u32).unwrap();
+            string.insert(0, c);
         }
 
         string
@@ -143,22 +153,32 @@ impl Interpreter {
         head
     }
 
-    pub fn truthy(&self) -> bool {
-        self.stack.last().map(|v| v.val > 0).unwrap_or(false)
+    pub fn truthy(&mut self) -> bool {
+        let branch = self.pointer.branch;
+        self.current()[branch].val > 0
     }
 
     pub fn push_raw(&mut self, val: i64) {
         self.push(TreeNode { val, children: Vec::new() });
     }
 
+    pub fn push_string(&mut self, string: String) {
+        let length = string.len();
+        for char in string.chars() {
+            self.push_raw(char as i64);
+        }
+        self.push_raw(length as i64);
+    }
+
     pub fn push(&mut self, node: TreeNode<i64>) {
         self.current().push(node);
     }
 
+    #[throws]
     pub fn eval_op(&mut self, op: Token) {
         use Token::*;
         match &op {
-            Period => print!("{}", self.pop()),
+            Period => print!("{}", self.pop()?),
             Comma => {} // Read Char (not top priority rn)
             OpenBracket => {
                 let len = self.current().len();
@@ -169,8 +189,8 @@ impl Interpreter {
             CloseParen => self.pointer.branch -= 1,
             Semicolon => todo!(),
             Plus | Asterisk | Minus | Slash | Or | And | Percent => {
-                let lhs = self.pop();
-                let rhs = self.pop();
+                let lhs = self.pop()?;
+                let rhs = self.pop()?;
                 let func = op.func();
                 self.push(lhs.eval(rhs, func));
             }
@@ -180,8 +200,15 @@ impl Interpreter {
         }
     }
 
-    pub fn pop(&mut self) -> TreeNode<i64> {
-        self.current().pop().unwrap()
+    pub fn pop(&mut self) -> Result<TreeNode<i64>, Error> {
+        match self.current().pop() {
+            Some(tn) => Ok(tn),
+            None => self.error("Stack underflow"),
+        }
+    }
+
+    pub fn error<T>(&self, msg: &str) -> Result<T, Error> {
+        Err(format!("Encountered runtime error: {msg}"))
     }
 }
 

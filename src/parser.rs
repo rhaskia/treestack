@@ -32,6 +32,7 @@ impl Parser {
                 Token::Keyword(k) => expr.push(self.statement(k)?),
                 Token::CloseBrace => break,
                 Token::Pointer(name, action) => expr.push(position(Node::Pointer(name, action), range)),
+                Token::String(string) => expr.push(position(Node::String(string), range)),
                 op => expr.push(position(Node::Operator(op), range)),
             }
         }
@@ -119,5 +120,6 @@ pub enum Node {
     If(Vec<Positioned<Node>>, Option<Vec<Positioned<Node>>>),
     Pointer(String, PointerAction),
     Function(String, Vec<Positioned<Node>>),
+    String(String),
 }
 

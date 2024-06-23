@@ -99,7 +99,7 @@ impl Lexer {
                 '"' => {
                     let start = self.index;
                     let mut string = String::new();
-                    while self.peek() != Some('"') {
+                    while self.peek() != Some('"') && self.peek().is_some() {
                         println!("{:?}", self.peek());
                         string.push(self.next().unwrap());
                     }
@@ -113,7 +113,7 @@ impl Lexer {
     }
 
     pub fn match_keyword(&mut self, word: &str) -> Option<Token> {
-       match word {
+       match word.to_lowercase().as_str() {
            "if" => Some(Token::Keyword(Keyword::If)),
            "else" => Some(Token::Keyword(Keyword::Else)),
            "while" => Some(Token::Keyword(Keyword::While)),
