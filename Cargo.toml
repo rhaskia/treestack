@@ -7,3 +7,4 @@ edition = "2021"
 fehler = "1.0.0"
 strum = { version = "0.26.2", features = ["derive"] }
 strum_macros = "0.26.4"
+syscalls = "0.6.18"

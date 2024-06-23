@@ -1,10 +1,11 @@
 use crate::error::Positioned;
-use crate::lexer::{Token, PointerAction};
+use crate::lexer::{PointerAction, Token};
 use crate::parser::Node;
 use crate::tree::TreeNode;
 use std::collections::HashMap;
+use std::io::{stdin, Read};
 use std::ops;
-use std::io::{Read, stdin};
+use syscalls::{raw_syscall, Sysno};
 
 #[derive(Default, Clone, Debug)]
 struct Pointer {
@@ -20,7 +21,7 @@ impl Pointer {
 
     pub fn close_branch(&mut self) {
         self.branch = self.tree.pop().unwrap(); // Error
-    } 
+    }
 }
 
 #[derive(Default)]
@@ -44,7 +45,11 @@ impl Interpreter {
                 Node::Push(u) => self.push_raw(u),
                 Node::Operator(op) => self.eval_op(op.clone()),
                 Node::Call(call) => self.call(&call),
-                Node::While(expr) => while self.truthy() { self.parse(expr.clone()) },
+                Node::While(expr) => {
+                    while self.truthy() {
+                        self.parse(expr.clone())
+                    }
+                }
                 Node::If(if_expr, else_expr) => {
                     if self.truthy() {
                         self.parse(if_expr.clone())
@@ -54,10 +59,12 @@ impl Interpreter {
                         }
                     }
                 }
-                Node::Function(name, f) => { self.functions.insert(name, f); }
+                Node::Function(name, f) => {
+                    self.functions.insert(name, f);
+                }
                 Node::Pointer(name, action) => self.call_pointer(name, action),
             }
-            println!("{inst}: {}, {:?}", self.stack, self.pointer);
+            //println!("{inst}: {}, {:?}", self.stack, self.pointer);
         }
     }
 
@@ -73,31 +80,54 @@ impl Interpreter {
                 let first = self.stack.last().unwrap().clone();
                 self.push(first);
             }
-            "system" => {
-                let call = self.pop();
+            "open" => {
+            }
+            "write" => {
+            }
+            "syscall" => {
+                let call = self.pop().val;
+                unsafe { 
+                    let result = raw_syscall!(Sysno::from(call as i32)); 
+                    self.push_raw(result as i64); 
+                }
+                
             }
             _ => {
                 let function = match self.functions.get(call) {
                     Some(f) => f,
                     None => return,
                 };
-                
+
                 self.parse(function.clone());
             }
         }
+    }
+
+    pub fn pop_string(&mut self) -> String {
+        let length = self.pop().val;
+        let mut string = String::new();
+
+        for _ in 0..length {
+            let c = char::from_u32(self.pop().val as u32).unwrap();
+            string.push(c);
+        }
+
+        string
     }
 
     pub fn call_pointer(&mut self, name: String, action: PointerAction) {
         match action {
             PointerAction::Jump => {
                 self.pointer = self.pointers[&name].clone();
-            },
-            PointerAction::Create => { self.pointers.insert(name, self.pointer.clone()); },
-            PointerAction::Push => { 
+            }
+            PointerAction::Create => {
+                self.pointers.insert(name, self.pointer.clone());
+            }
+            PointerAction::Push => {
                 let pointer = self.pointers[&name].clone();
                 let value = self.at_pointer(pointer).clone();
                 self.push(value)
-            },
+            }
         }
     }
 
@@ -123,15 +153,15 @@ impl Interpreter {
 
     pub fn push(&mut self, node: TreeNode<i64>) {
         self.current().push(node);
-    } 
+    }
 
     pub fn eval_op(&mut self, op: Token) {
         use Token::*;
         match &op {
             Period => print!("{}", self.pop()),
-            Comma => {}, // Read Char (not top priority rn)
+            Comma => {} // Read Char (not top priority rn)
             OpenBracket => {
-                self.pointer.open_branch(); 
+                self.pointer.open_branch();
             }
             CloseBracket => self.pointer.close_branch(),
             OpenParen => self.pointer.branch += 1,
@@ -142,9 +172,9 @@ impl Interpreter {
                 let rhs = self.pop();
                 let func = op.func();
                 self.push(lhs.eval(rhs, func));
-            },
-            _ => { 
-                println!("Unused Operator: {op:?}"); 
+            }
+            _ => {
+                println!("Unused Operator: {op:?}");
             }
         }
     }

@@ -1,4 +1,1 @@
-FUNC push { 3 4 }
-IF { 3 } ELSE { 9 }
-(This begins a new thing)
-3 [ 98 &name ] 9 [ 4 ] *name . 
+"hello world!" print

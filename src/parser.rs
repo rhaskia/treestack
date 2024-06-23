@@ -59,6 +59,7 @@ impl Parser {
             },
             Keyword::Else => unreachable!(),
             Keyword::While => Node::While(self.expression()?),
+            Keyword::Function => Node::Function(String::from(""), vec![]),
         };
         let end = self.previous().unwrap().range.end;
 

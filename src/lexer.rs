@@ -95,6 +95,15 @@ impl Lexer {
                     let token = self.match_keyword(&word).unwrap_or(Token::Word(word));
                     self.push_long(token, start)
                 }
+
+                '"' => {
+                    let start = self.index;
+                    let mut string = String::new();
+                    while self.peek() != Some('"') {
+                        string.push(self.next().unwrap());
+                    }
+                    self.push_long(Token::String(string), start)
+                }
                 _ => {} 
             };
         }             
@@ -107,6 +116,7 @@ impl Lexer {
            "if" => Some(Token::Keyword(Keyword::If)),
            "else" => Some(Token::Keyword(Keyword::Else)),
            "while" => Some(Token::Keyword(Keyword::While)),
+           "fn" => Some(Token::Keyword(Keyword::Function)),
            _ => None
        } 
     }
@@ -185,6 +195,7 @@ pub enum Keyword {
     If,
     Else,
     While,
+    Function,
 }
 
 #[derive(Debug, Clone, EnumIs, PartialEq)]
@@ -218,6 +229,7 @@ pub enum Token {
 
     Period,
     Comma,
+    String(String),
 
     Pointer(String, PointerAction)
 }
