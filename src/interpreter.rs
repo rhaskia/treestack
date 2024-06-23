@@ -75,7 +75,6 @@ impl Interpreter {
             }
             "system" => {
                 let call = self.pop();
-                // unix call
             }
             _ => {
                 let function = match self.functions.get(call) {
@@ -162,6 +161,10 @@ impl Token {
             Plus => ops::Add::add,
             Asterisk => ops::Mul::mul,
             Minus => ops::Sub::sub,
+            Slash => ops::Div::div,
+            Percent => ops::Rem::rem,
+            And => |l, r| (l > 0 && r > 0) as i64,
+            Or => |l, r| (l > 0 || r > 0) as i64,
             _ => unreachable!(),
         }
     }
