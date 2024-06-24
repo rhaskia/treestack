@@ -167,6 +167,7 @@ impl Interpreter {
         for char in string.chars() {
             self.push_raw(char as i64);
         }
+        println!("{length}");
         self.push_raw(length as i64);
     }
 

@@ -103,6 +103,7 @@ impl Lexer {
                         println!("{:?}", self.peek());
                         string.push(self.next().unwrap());
                     }
+                    self.next();
                     self.push_long(Token::String(string), start)
                 }
                 _ => {} 
