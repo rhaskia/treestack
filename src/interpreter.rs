@@ -86,9 +86,14 @@ impl Interpreter {
                 let first = self.stack.last().unwrap().clone();
                 self.push(first);
             }
-            "open" => {
+            "read" => {
+                let file = self.pop_string()?;
+                self.push_file(std::fs::read(file).unwrap());
             }
             "write" => {
+                let file = self.pop_string()?;
+                let to_write = self.pop_string()?;
+                std::fs::write(file, to_write);
             }
             "syscall" => {
                 let call = self.pop()?.val;
@@ -100,6 +105,15 @@ impl Interpreter {
             }
             "print" =>{
                 print!("{}", self.pop_string()?);
+            }
+            "group" => {
+                let length = self.pop()?.val;
+                let children: Result<Vec<TreeNode<i64>>, Error> = (0..length).map(|_| self.pop()).collect();
+                self.push(TreeNode { val: 0, children: children? })
+            }
+            "rev" => {
+                let rev_children = self.current().children.clone().into_iter().rev().collect();
+                self.current().children = rev_children;
             }
             _ => {
                 let function = match self.functions.get(call) {
@@ -155,11 +169,19 @@ impl Interpreter {
 
     pub fn truthy(&mut self) -> bool {
         let branch = self.pointer.branch;
-        self.current()[branch].val > 0
+        self.current()[branch - 1].val > 0
     }
 
     pub fn push_raw(&mut self, val: i64) {
         self.push(TreeNode { val, children: Vec::new() });
+    }
+
+    pub fn push_file(&mut self, vec: Vec<u8>) {
+        let length = vec.len();
+        for item in vec {
+           self.push_raw(item as i64);
+        }
+        self.push_raw(length as i64);
     }
 
     pub fn push_string(&mut self, string: String) {
@@ -167,11 +189,11 @@ impl Interpreter {
         for char in string.chars() {
             self.push_raw(char as i64);
         }
-        println!("{length}");
         self.push_raw(length as i64);
     }
 
     pub fn push(&mut self, node: TreeNode<i64>) {
+        self.pointer.branch += 1;
         self.current().push(node);
     }
 
@@ -189,9 +211,11 @@ impl Interpreter {
             OpenParen => self.pointer.branch += 1,
             CloseParen => self.pointer.branch -= 1,
             Semicolon => todo!(),
+            PlusPlus => { self.push_raw(1); self.eval_op(Token::Plus); },
+            MinusMinus => { self.push_raw(1); self.eval_op(Token::Minus); },
             Plus | Asterisk | Minus | Slash | Or | And | Percent => {
-                let lhs = self.pop()?;
                 let rhs = self.pop()?;
+                let lhs = self.pop()?;
                 let func = op.func();
                 self.push(lhs.eval(rhs, func));
             }
@@ -200,12 +224,13 @@ impl Interpreter {
             }
         }
     }
-
+    
     pub fn pop(&mut self) -> Result<TreeNode<i64>, Error> {
-        match self.current().pop() {
-            Some(tn) => Ok(tn),
-            None => self.error("Stack underflow"),
-        }
+        if self.current().children.is_empty() { return self.error("Stack underflow"); }
+        let branch = self.pointer.branch;
+        let value = self.current().remove(branch - 1);
+        self.pointer.branch -= 1;
+        Ok(value)
     }
 
     pub fn error<T>(&self, msg: &str) -> Result<T, Error> {

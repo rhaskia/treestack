@@ -1,0 +1,2 @@
+"hello world!" "test.txt" write
+"test.txt" read print

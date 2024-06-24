@@ -1,0 +1,6 @@
+dup (n -- n n)
+swap (a b -- b a)
+read ((file) -- (file_contents))
+write ((file) (to write) -- writes to a file)
+syscall (sysno -- runs a syscall)
+print ((string) -- prints string)

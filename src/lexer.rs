@@ -21,8 +21,8 @@ impl Lexer {
             match next_char {
                 ';' => self.push(Token::Semicolon),
 
-                '+' => self.push(Token::Plus),
-                '-' => self.push(Token::Minus),
+                '+' => match_tokens!(self, Plus, '+' => PlusPlus),
+                '-' => match_tokens!(self, Minus, '+' => MinusMinus),
                 '/' => self.push(Token::Slash),
                 '%' => self.push(Token::Percent),
 
@@ -100,7 +100,6 @@ impl Lexer {
                     let start = self.index;
                     let mut string = String::new();
                     while self.peek() != Some('"') && self.peek().is_some() {
-                        println!("{:?}", self.peek());
                         string.push(self.next().unwrap());
                     }
                     self.next();
@@ -224,7 +223,9 @@ pub enum Token {
     Or,
 
     Plus,
+    PlusPlus,
     Minus,
+    MinusMinus,
     Asterisk,
     Slash,
     Ampersand,

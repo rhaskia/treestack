@@ -55,6 +55,7 @@ pub fn start_repl() {
             }
             KeyCode::Enter => {
                 print!("\n\r");
+                disable_raw_mode();
                 let tokens = Lexer::new(input.clone()).parse();
                 let ast = Parser::new(tokens).parse().unwrap();
                 let result = interpreter.parse(ast);
@@ -63,6 +64,7 @@ pub fn start_repl() {
                 input.clear();
                 cursor = 0;
                 print!("\n\r> ");
+                enable_raw_mode();
             }
             _ => {} 
         }
