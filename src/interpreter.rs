@@ -19,7 +19,7 @@ struct Pointer {
 impl Pointer {
     pub fn open_branch(&mut self, len: usize) {
         self.tree.push(self.branch);
-        self.branch = len;
+        self.branch = len - 1;
     }
 
     pub fn close_branch(&mut self) {
@@ -69,7 +69,7 @@ impl Interpreter {
                 }
                 Node::Pointer(name, action) => self.call_pointer(name, action),
             }
-            //println!("{inst}: {}, {:?}", self.stack, self.pointer);
+            println!("{inst}: {}, {:?}", self.stack, self.pointer);
         }
     }
 
@@ -162,7 +162,7 @@ impl Interpreter {
     pub fn at_pointer(&mut self, pointer: Pointer) -> &mut TreeNode<i64> {
         let mut head = &mut self.stack;
         for pointer in &pointer.tree {
-            head = &mut head.children[*pointer];
+            head = &mut head.children[*pointer - 1];
         }
         head
     }
@@ -193,8 +193,10 @@ impl Interpreter {
     }
 
     pub fn push(&mut self, node: TreeNode<i64>) {
+        let branch = self.pointer.branch;
+        if branch <= self.current().len() { self.current().insert(branch, node); }
+        else { self.current().push(node) }
         self.pointer.branch += 1;
-        self.current().push(node);
     }
 
     #[throws]
@@ -205,6 +207,7 @@ impl Interpreter {
             Comma => {} // Read Char (not top priority rn)
             OpenBracket => {
                 let len = self.current().len();
+                // BAD
                 self.pointer.open_branch(len);
             }
             CloseBracket => self.pointer.close_branch(),
