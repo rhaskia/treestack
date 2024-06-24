@@ -214,25 +214,30 @@ impl Interpreter {
             OpenParen => self.pointer.branch += 1,
             CloseParen => self.pointer.branch -= 1,
             Semicolon => todo!(),
-            PlusPlus => { self.push_raw(1); self.eval_op(Token::Plus); },
-            MinusMinus => { self.push_raw(1); self.eval_op(Token::Minus); },
-            Plus | Asterisk | Minus | Slash | Or | And | Percent => {
+            PlusPlus => { self.on()?.val += 1; },
+            MinusMinus => { self.on()?.val -= 1; },
+            Not => { self.on()?.val = (self.on()?.val == 0) as i64 }
+            _ => {
                 let rhs = self.pop()?;
                 let lhs = self.pop()?;
                 let func = op.func();
                 self.push(lhs.eval(rhs, func));
             }
-            _ => {
-                println!("Unused Operator: {op:?}");
-            }
         }
     }
     
     pub fn pop(&mut self) -> Result<TreeNode<i64>, Error> {
-        if self.current().children.is_empty() { return self.error("Stack underflow"); }
         let branch = self.pointer.branch;
+        if self.current().children.is_empty() || branch == 0 { return self.error("Stack underflow"); }
         let value = self.current().remove(branch - 1);
         self.pointer.branch -= 1;
+        Ok(value)
+    }
+
+    pub fn on(&mut self) -> Result<&mut TreeNode<i64>, Error> {
+        let branch = self.pointer.branch;
+        if self.current().children.is_empty() || branch == 0 { return self.error("Stack underflow"); }
+        let value = &mut self.current()[branch - 1];
         Ok(value)
     }
 
@@ -252,6 +257,11 @@ impl Token {
             Percent => ops::Rem::rem,
             And => |l, r| (l > 0 && r > 0) as i64,
             Or => |l, r| (l > 0 || r > 0) as i64,
+            Equals => |l, r| (l == r) as i64,
+            Greater => |l, r| (l > r) as i64,
+            Lesser => |l, r| (l < r) as i64,
+            GreaterThan => |l, r| (l >= r) as i64,
+            LesserThan => |l, r| (l <= r) as i64,
             _ => unreachable!(),
         }
     }

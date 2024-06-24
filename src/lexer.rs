@@ -22,7 +22,7 @@ impl Lexer {
                 ';' => self.push(Token::Semicolon),
 
                 '+' => match_tokens!(self, Plus, '+' => PlusPlus),
-                '-' => match_tokens!(self, Minus, '+' => MinusMinus),
+                '-' => match_tokens!(self, Minus, '-' => MinusMinus),
                 '/' => self.push(Token::Slash),
                 '%' => self.push(Token::Percent),
 
@@ -37,6 +37,11 @@ impl Lexer {
 
                 '.' => self.push(Token::Period),
                 ',' => self.push(Token::Comma),
+                '=' => self.push(Token::Equals),
+                '!' => self.push(Token::Not),
+
+                '<' => match_tokens!(self, Greater, '=' => GreaterThan),
+                '>' => match_tokens!(self, Lesser, '=' => LesserThan),
 
                 // DRY this
                 '^' => {
@@ -230,6 +235,13 @@ pub enum Token {
     Slash,
     Ampersand,
 
+    Equals,
+    Greater,
+    GreaterThan,
+    Lesser,
+    LesserThan,
+    Not,
+
     Period,
     Comma,
     String(String),
@@ -252,6 +264,7 @@ pub mod macros {
                 $(
                     if $s.matches($extra_char) {
                         $s.push(Token::$extra_token);
+                        $s.next();
                         base = false;
                     }
                 )*
