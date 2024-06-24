@@ -5,18 +5,28 @@ mod interpreter;
 mod parser;
 mod compiler;
 mod repl;
-use crate::parser::Parser;
+//use crate::parser::Parser;
 use crate::lexer::Lexer;
 use crate::interpreter::Interpreter;
+use clap::{Parser, command, arg};
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about=None)]
+struct Args {
+    file: Option<String>,
+
+    #[arg(short, long)]
+    debug: bool,
+}
 
 fn main() {
-    let args = get_args();
+    let args = Args::parse();
 
     // Proper Clap stuff
-    if args.len() > 1 {
-       run_file(&args[1]) 
+    if let Some(ref file) = args.file {
+       run_file(&file) 
     } else {
-        repl::start_repl();
+        repl::start_repl(args.debug);
     }
 
     // let llvm_ir = compiler::Compiler::new().compile(&ast);
@@ -29,10 +39,10 @@ fn run_file(file: &str) {
     let tokens = Lexer::new(program).parse();
     println!("{tokens:?}"); // FIT behind debug flag
 
-    let ast = Parser::new(tokens).parse().unwrap();
+    let ast = parser::Parser::new(tokens).parse().unwrap();
     println!("{ast:?}"); // FIT behind debug flag
 
-    Interpreter::new().parse(ast);
+    Interpreter::new(false).parse(ast);
 }
 
 fn get_args() -> Vec<String> {

@@ -19,7 +19,7 @@ struct Pointer {
 impl Pointer {
     pub fn open_branch(&mut self, len: usize) {
         self.tree.push(self.branch);
-        self.branch = len - 1;
+        self.branch = len;
     }
 
     pub fn close_branch(&mut self) {
@@ -33,11 +33,12 @@ pub struct Interpreter {
     functions: HashMap<String, Vec<Positioned<Node>>>,
     pointer: Pointer,
     pointers: HashMap<String, Pointer>,
+    debug: bool,
 }
 
 impl Interpreter {
-    pub fn new() -> Self {
-        Self { ..Default::default() }
+    pub fn new(debug: bool) -> Self {
+        Self { debug, ..Default::default() }
     }
 
     #[throws]
@@ -69,7 +70,7 @@ impl Interpreter {
                 }
                 Node::Pointer(name, action) => self.call_pointer(name, action),
             }
-            println!("{inst}: {}, {:?}", self.stack, self.pointer);
+            if self.debug { println!("{inst}: {}, {:?}", self.stack, self.pointer); }
         }
     }
 
@@ -206,7 +207,8 @@ impl Interpreter {
             Period => print!("{}", self.pop()?),
             Comma => {} // Read Char (not top priority rn)
             OpenBracket => {
-                let len = self.current().len();
+                let branch = self.pointer.branch;
+                let len = self.current()[branch - 1].len();
                 // BAD
                 self.pointer.open_branch(len);
             }

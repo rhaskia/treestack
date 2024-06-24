@@ -4,10 +4,10 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use std::io::{stdin, stdout, Write};
 
-pub fn start_repl() {
+pub fn start_repl(debug: bool) {
     enable_raw_mode();
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::new(debug);
 
     let mut stdin = stdin();
     let mut stdout = stdout();
