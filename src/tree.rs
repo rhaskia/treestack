@@ -3,21 +3,13 @@ use std::{
     ops::{Add, Deref, DerefMut, Mul, Sub},
 };
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct TreeNode<T> {
     pub val: T,
     pub children: Vec<TreeNode<T>>,
 }
 
 impl<T> TreeNode<T> {
-    pub fn push_raw(&mut self, item: T) {
-        self.children.push(TreeNode { val: item, children: Vec::new() })
-    }
-
-    pub fn new(item: T) -> Self {
-        TreeNode { val: item, children: Vec::new() }
-    }
-
     pub fn eval(self, rhs: Self, op: fn(T, T) -> T) -> Self {
         let children =
             self.children.into_iter().zip(rhs.children).map(|(l, r)| l.eval(r, op)).collect();
@@ -75,12 +67,6 @@ impl<T: Sub<Output = T>> Sub for TreeNode<T> {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self { val: self.val - rhs.val, children: self.children } // TODO children mult
-    }
-}
-
-impl<T: Default> TreeNode<T> {
-    pub fn default() -> Self {
-        Self { val: T::default(), children: Vec::new() }
     }
 }
 

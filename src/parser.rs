@@ -1,5 +1,4 @@
 use std::ops::Range;
-
 use crate::error::{Error, Positioned, position};
 use crate::lexer::{Keyword, Token, PointerAction};
 use fehler::throws;
@@ -90,13 +89,12 @@ impl Parser {
         self.previous()
     }
 
-    #[throws]
-    pub fn ensure_next(&mut self, token: Token) -> Positioned<Token> {
+    pub fn ensure_next(&mut self, token: Token) -> Result<Positioned<Token>, Error> {
         let next = self.next().unwrap();
         if next.inner == token { 
-            return next;
+            return Ok(next);
         }
-        return Err(self.error(format!("Expected {token:?} but found {:?}", next.inner), next.range))?
+        return Err(self.error(format!("Expected {token:?} but found {:?}", next.inner), next.range))
     }
 
     pub fn error(&self, message: String, range: Range<usize>) -> Error {
@@ -113,7 +111,6 @@ impl Parser {
 
 #[derive(Debug, Clone)]
 pub enum Node {
-    Expression(Vec<Positioned<Node>>),
     Push(i64),
     Operator(Token),
     Call(String),

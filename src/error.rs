@@ -7,6 +7,12 @@ pub struct Error {
     pub range: Range<usize>
 }
 
+impl Error {
+    pub fn pretty(&self) -> String {
+        format!("{},{}: {}", self.range.start, self.range.end, self.message)
+    } 
+}
+
 pub struct Positioned<T> {
     pub inner: T,
     pub range: Range<usize>

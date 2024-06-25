@@ -3,7 +3,7 @@ mod lexer;
 mod tree;
 mod interpreter;
 mod parser;
-mod compiler;
+//mod compiler;
 mod repl;
 //use crate::parser::Parser;
 use crate::lexer::Lexer;
@@ -28,18 +28,21 @@ fn main() {
     } else {
         repl::start_repl(args.debug);
     }
-
-    // let llvm_ir = compiler::Compiler::new().compile(&ast);
-    // std::fs::write("./output.ll", llvm_ir).unwrap();
 }
 
 fn run_file(file: &str, debug: bool) {
-    let program = load_file(file);
+    let program = match load_file(file) {
+        Ok(file) => file,
+        Err(err) => { eprintln!("{}", err); return; }
+    };
 
     let tokens = Lexer::new(program).parse();
     if debug { println!("{tokens:?}"); }// FIT behind debug flag
 
-    let ast = parser::Parser::new(tokens).parse().unwrap();
+    let ast = match parser::Parser::new(tokens).parse() {
+        Ok(ast) => ast,
+        Err(err) => { eprintln!("{:?}", err.pretty()); return; }
+    };
     if debug { println!("{ast:?}"); } // FIT behind debug flag
 
     let result = Interpreter::new(debug).parse(ast);
@@ -48,10 +51,6 @@ fn run_file(file: &str, debug: bool) {
     }
 }
 
-fn get_args() -> Vec<String> {
-   std::env::args().collect::<Vec<String>>()
-}
-
-fn load_file(path: &str) -> String {
-   std::fs::read_to_string(path).expect("File not found")
+fn load_file(path: &str) -> Result<String, String> {
+   std::fs::read_to_string(path).map_err(|e| format!("Error while loading program: {:?}", e.kind()))
 }

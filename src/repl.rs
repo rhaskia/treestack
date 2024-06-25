@@ -2,14 +2,13 @@ use crossterm::{event::{read, Event, KeyCode, KeyEventKind, KeyModifiers}, termi
 use crate::interpreter::Interpreter;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use std::io::{stdin, stdout, Write};
+use std::io::{stdout, Write};
 
 pub fn start_repl(debug: bool) {
-    enable_raw_mode();
+    enable_raw_mode().expect("Error while trying to start repl");
 
     let mut interpreter = Interpreter::new(debug);
 
-    let mut stdin = stdin();
     let mut stdout = stdout();
 
     let mut input = String::new();
@@ -25,7 +24,7 @@ pub fn start_repl(debug: bool) {
             _ => continue,
         };
 
-        if event.kind == KeyEventKind::Press { continue; }
+        if event.kind == KeyEventKind::Release { continue; }
 
         match event.code {
             KeyCode::Char('c') if event.modifiers == KeyModifiers::CONTROL => {
@@ -57,7 +56,7 @@ pub fn start_repl(debug: bool) {
             }
             KeyCode::Enter => {
                 print!("\n\r");
-                disable_raw_mode();
+                disable_raw_mode().unwrap();
                 let tokens = Lexer::new(input.clone()).parse();
                 let ast = Parser::new(tokens).parse().unwrap();
                 let result = interpreter.parse(ast);
@@ -66,14 +65,14 @@ pub fn start_repl(debug: bool) {
                 input.clear();
                 cursor = 0;
                 print!("\n\r> ");
-                enable_raw_mode();
+                enable_raw_mode().unwrap();
             }
             _ => {} 
         }
 
         print!("\x1b[2K\r> {input}\r\x1b[{}C", cursor + 2);
-        let _ = stdout.flush();
+        stdout.flush().unwrap();
     }
 
-    disable_raw_mode();
+    disable_raw_mode().unwrap();
 }

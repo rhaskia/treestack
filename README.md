@@ -5,15 +5,7 @@ Treestack works essentially like a regular stack language, except each stack con
 Treestack also allows for more movement around the stack/s than a Forth for example, and also allows for pointers to locations on the stack.
 
 # Syntax
+Syntax is derived of 3-4 main types: [operators](operators.md), 
 
-## Functions
-A function is essentially just a group of statements, and does not allow for any parameters (maybe allow for pointers in future)
-; NAME + * ^ ; 
-This constructs a function called NAME, that calls the operators + * and ^ on the current position on the stack.
-
-## Pointers
-&name creates a pointer called name at the current position
-*name pushes the value at the pointer onto the stack
-^name jumps to the pointer's location
-
-## Basic Words
+# Ideas
+https://wiki.c2.com/?JoyLanguage

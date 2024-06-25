@@ -1,4 +1,4 @@
-use crate::error::{Error, Positioned};
+use crate::error::Positioned;
 use strum::EnumIs;
 use macros::*;
 
@@ -40,6 +40,8 @@ impl Lexer {
                 ',' => self.push(Token::Comma),
                 '=' => self.push(Token::Equals),
                 '!' => self.push(Token::Not),
+
+                '|' => match_two!(self, '|', Or),
 
                 '<' => match_tokens!(self, Greater, '=' => GreaterThan),
                 '>' => match_tokens!(self, Lesser, '=' => LesserThan),
@@ -105,7 +107,7 @@ impl Lexer {
                 '"' => {
                     let start = self.index;
                     let mut string = String::new();
-                    while self.peek() != Some('"') && self.peek().is_some() {
+                    while self.peek() != Some('"') {
                         string.push(self.next().unwrap());
                     }
                     self.next();
@@ -136,12 +138,12 @@ impl Lexer {
         self.tokens.push(Positioned { inner: token, range: start..self.index })
     } 
 
-    pub fn eof_error(&self) -> Error {
-        Error {
-            message: String::from("Expected token found EOF"),
-            range: (self.index - 1)..(self.index)
-        }
-    }
+    // pub fn eof_error(&self) -> Error {
+    //     Error {
+    //         message: String::from("Expected token found EOF"),
+    //         range: (self.index - 1)..(self.index)
+    //     }
+    // }
 
     pub fn next(&mut self) -> Option<char> {
         self.index += 1;
