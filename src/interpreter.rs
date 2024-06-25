@@ -274,7 +274,7 @@ impl Interpreter {
 
     pub fn before(&mut self) -> Result<TreeNode<i64>, Error> {
         let branch = self.pointer.branch;
-        Ok(self.get_child(branch)?.clone())
+        Ok(self.get_child(branch - 1)?.clone())
     }
 
     pub fn error<T>(&self, msg: &str) -> Result<T, Error> {

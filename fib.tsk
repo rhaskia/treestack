@@ -1,2 +1,0 @@
-fn fib { &count while { ( dup * ) ^count -- } } 
-1 1 2 while { fib } .
