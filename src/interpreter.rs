@@ -84,7 +84,7 @@ impl Interpreter {
                 self.push(second);
             }
             "dup" => {
-                let first = self.stack.last().unwrap().clone();
+                let first = self.on()?.clone();
                 self.push(first);
             }
             "read" => {
@@ -104,7 +104,11 @@ impl Interpreter {
                 }
                 
             }
-            "print" =>{
+            "abs" => {
+                let val = self.on()?.val;
+                self.on()?.val = val.abs();
+            }
+            "print" => {
                 print!("{}", self.pop_string()?);
             }
             "group" => {
@@ -170,6 +174,7 @@ impl Interpreter {
 
     pub fn truthy(&mut self) -> bool {
         let branch = self.pointer.branch;
+        if branch == 0 { return false; }
         self.current()[branch - 1].val > 0
     }
 
@@ -205,7 +210,7 @@ impl Interpreter {
         use Token::*;
         match &op {
             Period => print!("{}", self.pop()?),
-            Comma => {} // Read Char (not top priority rn)
+            Comma => print!("{}", char::from_u32(self.pop()?.val as u32).unwrap()),
             OpenBracket => {
                 let branch = self.pointer.branch;
                 let len = self.current()[branch - 1].len();
@@ -219,6 +224,7 @@ impl Interpreter {
             PlusPlus => { self.on()?.val += 1; },
             MinusMinus => { self.on()?.val -= 1; },
             Not => { self.on()?.val = (self.on()?.val == 0) as i64 }
+            Grave => { self.pop()?; }
             _ => {
                 let rhs = self.pop()?;
                 let lhs = self.pop()?;
@@ -264,7 +270,7 @@ impl Token {
             Lesser => |l, r| (l < r) as i64,
             GreaterThan => |l, r| (l >= r) as i64,
             LesserThan => |l, r| (l <= r) as i64,
-            _ => unreachable!(),
+            _ => panic!("Operator not implemented {:?}", self),
         }
     }
 }

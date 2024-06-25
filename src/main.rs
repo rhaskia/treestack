@@ -24,7 +24,7 @@ fn main() {
 
     // Proper Clap stuff
     if let Some(ref file) = args.file {
-       run_file(&file) 
+       run_file(&file, args.debug); 
     } else {
         repl::start_repl(args.debug);
     }
@@ -33,16 +33,16 @@ fn main() {
     // std::fs::write("./output.ll", llvm_ir).unwrap();
 }
 
-fn run_file(file: &str) {
+fn run_file(file: &str, debug: bool) {
     let program = load_file(file);
 
     let tokens = Lexer::new(program).parse();
-    println!("{tokens:?}"); // FIT behind debug flag
+    if debug { println!("{tokens:?}"); }// FIT behind debug flag
 
     let ast = parser::Parser::new(tokens).parse().unwrap();
-    println!("{ast:?}"); // FIT behind debug flag
+    if debug { println!("{ast:?}"); } // FIT behind debug flag
 
-    Interpreter::new(false).parse(ast);
+    Interpreter::new(debug).parse(ast);
 }
 
 fn get_args() -> Vec<String> {

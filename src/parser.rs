@@ -65,6 +65,7 @@ impl Parser {
             }
             Keyword::Function => {
                 let name = self.next().unwrap();
+                self.ensure_next(Token::OpenBrace)?;
                 if let Token::Word(word) = name.inner {
                     Node::Function(word, self.expression()?)
                 } else {

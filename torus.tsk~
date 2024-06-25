@@ -1,0 +1,2 @@
+20 while { dup --  } 
+. while { &x [ 20 while { dup -- *x swap } ] }

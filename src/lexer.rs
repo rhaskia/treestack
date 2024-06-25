@@ -26,8 +26,8 @@ impl Lexer {
                 '/' => self.push(Token::Slash),
                 '%' => self.push(Token::Percent),
 
-                '(' => self.push(Token::CloseParen),
-                ')' => self.push(Token::OpenParen),
+                ')' => self.push(Token::CloseParen),
+                '(' => self.push(Token::OpenParen),
 
                 '}' => self.push(Token::CloseBrace),
                 '{' => self.push(Token::OpenBrace),
@@ -36,6 +36,7 @@ impl Lexer {
                 '[' => self.push(Token::OpenBracket),
 
                 '.' => self.push(Token::Period),
+                '`' => self.push(Token::Grave),
                 ',' => self.push(Token::Comma),
                 '=' => self.push(Token::Equals),
                 '!' => self.push(Token::Not),
@@ -244,6 +245,7 @@ pub enum Token {
 
     Period,
     Comma,
+    Grave,
     String(String),
 
     Pointer(String, PointerAction)
