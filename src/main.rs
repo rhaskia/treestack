@@ -47,7 +47,7 @@ fn run_file(file: &str, debug: bool) {
 
     let result = Interpreter::new(debug).parse(ast);
     if let Err(msg) = result {
-        eprintln!("{msg}");
+        eprintln!("{msg:?}");
     }
 }
 

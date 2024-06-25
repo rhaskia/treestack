@@ -41,8 +41,7 @@ impl Interpreter {
         Self { debug, ..Default::default() }
     }
 
-    #[throws]
-    pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) {
+    pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) -> Result<(), Positioned<Error>> {
         for instruction in instructions.into_iter() {
             let inst = format!("{:?}: ", instruction);
             match instruction.inner {
