@@ -5,8 +5,9 @@ use crate::tree::TreeNode;
 use std::collections::HashMap;
 use std::io::{stdin, Read};
 use std::ops;
-use syscalls::{raw_syscall, Sysno};
 use fehler::throws;
+#[cfg(target_os = "linux")]
+use syscalls::{raw_syscall, Sysno};
 
 type Error = String;
 
@@ -98,11 +99,7 @@ impl Interpreter {
             }
             "syscall" => {
                 let call = self.pop()?.val;
-                unsafe { 
-                    let result = raw_syscall!(Sysno::from(call as i32)); 
-                    self.push_raw(result as i64); 
-                }
-                
+                self.push_raw(syscall(call));
             }
             "abs" => {
                 let val = self.on()?.val;
@@ -273,4 +270,17 @@ impl Token {
             _ => panic!("Operator not implemented {:?}", self),
         }
     }
+}
+
+#[cfg(target_os = "linux")]
+fn syscall(call: i64) -> i64 {
+                unsafe { 
+                    let result = raw_syscall!(Sysno::from(call as i32)); 
+                    result as i64
+                }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn syscall(call: i64) -> i64 {
+    -1
 }

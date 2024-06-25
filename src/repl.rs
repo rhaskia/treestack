@@ -1,4 +1,4 @@
-use crossterm::{event::{KeyCode, Event, read, KeyModifiers}, terminal::{enable_raw_mode, disable_raw_mode}};
+use crossterm::{event::{read, Event, KeyCode, KeyEventKind, KeyModifiers}, terminal::{disable_raw_mode, enable_raw_mode}};
 use crate::interpreter::Interpreter;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
@@ -24,6 +24,7 @@ pub fn start_repl(debug: bool) {
             Event::Key(key) => key,
             _ => continue,
         };
+        if event.kind == KeyEventKind::Press { continue; }
 
         match event.code {
             KeyCode::Char('c') if event.modifiers == KeyModifiers::CONTROL => {
