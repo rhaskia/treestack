@@ -24,6 +24,7 @@ pub fn start_repl(debug: bool) {
             Event::Key(key) => key,
             _ => continue,
         };
+
         if event.kind == KeyEventKind::Press { continue; }
 
         match event.code {

@@ -151,8 +151,8 @@ impl Interpreter {
             }
             PointerAction::Push => {
                 let pointer = self.pointers[&name].clone();
-                let value = self.at_pointer(pointer).clone();
-                self.push(value)
+                let value = self.at_pointer(pointer).clone().val;
+                self.push_raw(value)
             }
         }
     }
