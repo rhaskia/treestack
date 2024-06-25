@@ -2,10 +2,9 @@ use crate::error::Positioned;
 use crate::lexer::{PointerAction, Token};
 use crate::parser::Node;
 use crate::tree::TreeNode;
-use std::collections::HashMap;
-use std::io::{stdin, Read};
-use std::ops;
 use fehler::throws;
+use std::collections::HashMap;
+use std::ops;
 #[cfg(target_os = "linux")]
 use syscalls::{raw_syscall, Sysno};
 
@@ -69,9 +68,11 @@ impl Interpreter {
                 Node::Function(name, f) => {
                     self.functions.insert(name, f);
                 }
-                Node::Pointer(name, action) => self.call_pointer(name, action),
+                Node::Pointer(name, action) => self.call_pointer(name, action)?,
             }
-            if self.debug { println!("{inst}: {}, {:?}", self.stack, self.pointer); }
+            if self.debug {
+                println!("{inst}: {}, {:?}", self.stack, self.pointer);
+            }
         }
     }
 
@@ -101,16 +102,21 @@ impl Interpreter {
                 let call = self.pop()?.val;
                 self.push_raw(syscall(call));
             }
+            "shear" => self.on()?.children.clear(),
+            "drop" => { self.pop()?; }
             "abs" => {
                 let val = self.on()?.val;
                 self.on()?.val = val.abs();
             }
-            "print" => {
-                print!("{}", self.pop_string()?);
+            "over" => {
+                let second = self.before()?;
+                self.push(second);
             }
+            "print" => print!("{}", self.pop_string()?),
             "group" => {
                 let length = self.pop()?.val;
-                let children: Result<Vec<TreeNode<i64>>, Error> = (0..length).map(|_| self.pop()).collect();
+                let children: Result<Vec<TreeNode<i64>>, Error> =
+                    (0..length).map(|_| self.pop()).collect();
                 self.push(TreeNode { val: 0, children: children? })
             }
             "rev" => {
@@ -141,6 +147,7 @@ impl Interpreter {
         string
     }
 
+    #[throws]
     pub fn call_pointer(&mut self, name: String, action: PointerAction) {
         match action {
             PointerAction::Jump => {
@@ -151,7 +158,7 @@ impl Interpreter {
             }
             PointerAction::Push => {
                 let pointer = self.pointers[&name].clone();
-                let value = self.at_pointer(pointer).clone().val;
+                let value = self.at_pointer(pointer.clone()).children[pointer.branch - 1].val;
                 self.push_raw(value)
             }
         }
@@ -171,7 +178,9 @@ impl Interpreter {
 
     pub fn truthy(&mut self) -> bool {
         let branch = self.pointer.branch;
-        if branch == 0 { return false; }
+        if branch == 0 {
+            return false;
+        }
         self.current()[branch - 1].val > 0
     }
 
@@ -182,7 +191,7 @@ impl Interpreter {
     pub fn push_file(&mut self, vec: Vec<u8>) {
         let length = vec.len();
         for item in vec {
-           self.push_raw(item as i64);
+            self.push_raw(item as i64);
         }
         self.push_raw(length as i64);
     }
@@ -197,8 +206,11 @@ impl Interpreter {
 
     pub fn push(&mut self, node: TreeNode<i64>) {
         let branch = self.pointer.branch;
-        if branch <= self.current().len() { self.current().insert(branch, node); }
-        else { self.current().push(node) }
+        if branch <= self.current().len() {
+            self.current().insert(branch, node);
+        } else {
+            self.current().push(node)
+        }
         self.pointer.branch += 1;
     }
 
@@ -218,10 +230,16 @@ impl Interpreter {
             OpenParen => self.pointer.branch += 1,
             CloseParen => self.pointer.branch -= 1,
             Semicolon => todo!(),
-            PlusPlus => { self.on()?.val += 1; },
-            MinusMinus => { self.on()?.val -= 1; },
-            Not => { self.on()?.val = (self.on()?.val == 0) as i64 }
-            Grave => { self.pop()?; }
+            PlusPlus => {
+                self.on()?.val += 1;
+            }
+            MinusMinus => {
+                self.on()?.val -= 1;
+            }
+            Not => self.on()?.val = (self.on()?.val == 0) as i64,
+            Grave => {
+                self.pop()?;
+            }
             _ => {
                 let rhs = self.pop()?;
                 let lhs = self.pop()?;
@@ -230,10 +248,12 @@ impl Interpreter {
             }
         }
     }
-    
+
     pub fn pop(&mut self) -> Result<TreeNode<i64>, Error> {
         let branch = self.pointer.branch;
-        if self.current().children.is_empty() || branch == 0 { return self.error("Stack underflow"); }
+        if self.current().children.is_empty() || branch == 0 {
+            return self.error("Stack underflow");
+        }
         let value = self.current().remove(branch - 1);
         self.pointer.branch -= 1;
         Ok(value)
@@ -241,9 +261,20 @@ impl Interpreter {
 
     pub fn on(&mut self) -> Result<&mut TreeNode<i64>, Error> {
         let branch = self.pointer.branch;
-        if self.current().children.is_empty() || branch == 0 { return self.error("Stack underflow"); }
-        let value = &mut self.current()[branch - 1];
+        self.get_child(branch)
+    }
+
+    pub fn get_child(&mut self, position: usize) -> Result<&mut TreeNode<i64>, Error> {
+        if self.current().children.is_empty() || position == 0 {
+            return self.error("Stack underflow");
+        }
+        let value = &mut self.current()[position - 1];
         Ok(value)
+    }
+
+    pub fn before(&mut self) -> Result<TreeNode<i64>, Error> {
+        let branch = self.pointer.branch;
+        Ok(self.get_child(branch)?.clone())
     }
 
     pub fn error<T>(&self, msg: &str) -> Result<T, Error> {
@@ -274,13 +305,14 @@ impl Token {
 
 #[cfg(target_os = "linux")]
 fn syscall(call: i64) -> i64 {
-                unsafe { 
-                    let result = raw_syscall!(Sysno::from(call as i32)); 
-                    result as i64
-                }
+    unsafe {
+        let result = raw_syscall!(Sysno::from(call as i32));
+        result as i64
+    }
 }
 
 #[cfg(not(target_os = "linux"))]
 fn syscall(call: i64) -> i64 {
     -1
 }
+

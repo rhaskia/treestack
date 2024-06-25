@@ -94,7 +94,7 @@ impl Lexer {
                     self.push_long(Token::Literal(number), start);
                 }
 
-                'a'..='z' | 'A'..='Z' => {
+                'a'..='z' | 'A'..='Z' | '_' => {
                     let start = self.index;
                     let mut word = self.next_word();
                     word.insert(0, next_char);
@@ -168,7 +168,7 @@ impl Lexer {
     pub fn next_word(&mut self) -> String {
         let mut word = String::new();
 
-        while self.peek().map(|c| c.is_alphabetic()).unwrap_or(false) {
+        while self.peek().map(|c| c.is_alphabetic() || c == '_').unwrap_or(false) {
             word.push(self.next().unwrap());
         }
 

@@ -42,7 +42,10 @@ fn run_file(file: &str, debug: bool) {
     let ast = parser::Parser::new(tokens).parse().unwrap();
     if debug { println!("{ast:?}"); } // FIT behind debug flag
 
-    Interpreter::new(debug).parse(ast);
+    let result = Interpreter::new(debug).parse(ast);
+    if let Err(msg) = result {
+        eprintln!("{msg}");
+    }
 }
 
 fn get_args() -> Vec<String> {

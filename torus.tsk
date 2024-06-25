@@ -1,3 +1,20 @@
-5 while { dup -- }
-&x [ 5 while { dup -- *x swap } ]
-.
+fn init_uv { 11 while { &x [ 11 while { dup -- *x swap } ] dup -- shear } }
+fn square { dup * }
+init_uv
+drop
+while { 
+    [ 
+        drop
+        while { 
+            6 - square 
+            swap 
+            6 - square 
+            + dup
+            20 < swap 8 >
+            +
+            if { "#" print } else { " " print }  
+        }
+        10 ,
+    ]
+    drop
+}
