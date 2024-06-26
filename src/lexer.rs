@@ -138,6 +138,10 @@ impl Lexer {
         self.tokens.push(Positioned { inner: token, range: start..self.index })
     } 
 
+    pub fn push_two(&mut self, token: Token) {
+        self.tokens.push(Positioned { inner: token, range: self.index..self.index + 1 })
+    } 
+
     // pub fn eof_error(&self) -> Error {
     //     Error {
     //         message: String::from("Expected token found EOF"),
@@ -267,7 +271,7 @@ pub mod macros {
                 let mut base = true;
                 $(
                     if $s.matches($extra_char) {
-                        $s.push(Token::$extra_token);
+                        $s.push_two(Token::$extra_token);
                         $s.next();
                         base = false;
                     }
@@ -282,7 +286,7 @@ pub mod macros {
     macro_rules! match_two {
         ($s:ident, $add_char:expr, $token:ident) => {{
             if $s.matches($add_char) {
-                $s.push(Token::$token)
+                $s.push_two(Token::$token)
             }
         }};
     }

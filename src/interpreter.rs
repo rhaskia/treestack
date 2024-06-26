@@ -189,10 +189,17 @@ impl Interpreter {
             }
             PointerAction::Push => {
                 let pointer = self.pointers.get(&name).ok_or_else(|| error)?.clone();
+                if !self.is_pointer_valid(&pointer) { return; } // Error
                 let value = self.at_pointer(pointer.clone()).children[pointer.branch - 1].val;
                 self.push_raw(value)
             }
         }
+    }
+
+    fn is_pointer_valid(&mut self, pointer: &Pointer) -> bool {
+       if pointer.branch == 0 { return false; } 
+       if self.current().children.len() < pointer.branch { return false; }
+       true
     }
 
     fn current(&mut self) -> &mut TreeNode<i64> {
@@ -202,6 +209,7 @@ impl Interpreter {
     fn at_pointer(&mut self, pointer: Pointer) -> &mut TreeNode<i64> {
         let mut head = &mut self.stack;
         for pointer in &pointer.tree {
+            // add valid pointer checks
             head = &mut head.children[*pointer - 1];
         }
         head
