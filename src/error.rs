@@ -2,15 +2,28 @@ use std::ops::{Range, Deref, DerefMut};
 use std::fmt::{Debug, Formatter};
 
 #[derive(Debug)]
-pub struct Error {
+pub struct RangeError {
     pub message: String,
     pub range: Range<usize>
 }
 
-impl Error {
+impl RangeError {
     pub fn pretty(&self) -> String {
         format!("{},{}: {}", self.range.start, self.range.end, self.message)
     } 
+}
+
+pub trait PositionError<T> {
+    fn position(self, range: Range<usize>) -> Result<T, RangeError> where Self: Sized;
+}
+
+impl<T> PositionError<T> for Result<T, String> {
+    fn position(self, range: Range<usize>) -> Result<T, RangeError> {
+        match self {
+            Ok(t) => Ok(t),
+            Err(message) => Err(RangeError { message, range })
+        }
+    }
 }
 
 pub struct Positioned<T> {

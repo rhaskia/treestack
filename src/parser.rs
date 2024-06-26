@@ -1,7 +1,9 @@
 use std::ops::Range;
-use crate::error::{Error, Positioned, position};
+use crate::error::{RangeError, Positioned, position};
 use crate::lexer::{Keyword, Token, PointerAction};
 use fehler::throws;
+
+type Error = RangeError;
 
 pub struct Parser {
     tokens: Vec<Positioned<Token>>,

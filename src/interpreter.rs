@@ -1,4 +1,4 @@
-use crate::error::Positioned;
+use crate::error::{PositionError, Positioned, RangeError};
 use crate::lexer::{PointerAction, Token};
 use crate::parser::Node;
 use crate::tree::TreeNode;
@@ -38,17 +38,26 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new(debug: bool) -> Self {
-        Self { debug, ..Default::default() }
+        Self {
+            debug,
+            ..Default::default()
+        }
     }
 
-    pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) -> Result<(), Positioned<Error>> {
+    pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) -> Result<(), RangeError> {
         for instruction in instructions.into_iter() {
-            let inst = format!("{:?}: ", instruction);
+            let pos = instruction.range;
+            let inst = format!("{:?}: ", instruction.inner);
             match instruction.inner {
                 Node::Push(u) => self.push_raw(u),
                 Node::String(string) => self.push_string(string),
-                Node::Operator(op) => self.eval_op(op.clone())?,
-                Node::Call(call) => self.call(&call)?,
+                Node::Operator(op) => self.eval_op(op.clone()).position(pos)?,
+                Node::Call(call) => {
+                    match self.functions.get(&call) {
+                        Some(f) => self.parse(f.clone())?,
+                        None => self.call(&call).position(pos)?,
+                    };
+                }
                 Node::While(expr) => {
                     while self.truthy() {
                         self.parse(expr.clone())?
@@ -66,13 +75,15 @@ impl Interpreter {
                 Node::Function(name, f) => {
                     self.functions.insert(name, f);
                 }
-                Node::Pointer(name, action) => self.call_pointer(name, action)?,
+                Node::Pointer(name, action) => self.call_pointer(name, action).position(pos)?,
             }
 
             if self.debug {
                 println!("{inst}: {}, {:?}", self.stack, self.pointer);
             }
         }
+
+        Ok(())
     }
 
     #[throws]
@@ -119,19 +130,17 @@ impl Interpreter {
                 let length = self.pop()?.val;
                 let children: Result<Vec<TreeNode<i64>>, Error> =
                     (0..length).map(|_| self.pop()).collect();
-                self.push(TreeNode { val: 0, children: children? })
+                self.push(TreeNode {
+                    val: 0,
+                    children: children?,
+                })
             }
             "rev" => {
                 let rev_children = self.current().children.clone().into_iter().rev().collect();
                 self.current().children = rev_children;
             }
             _ => {
-                let function = match self.functions.get(call) {
-                    Some(f) => f,
-                    None => return,
-                };
-
-                self.parse(function.clone())?;
+                self.error("Function not found")?
             }
         }
     }
@@ -195,7 +204,10 @@ impl Interpreter {
     }
 
     fn push_raw(&mut self, val: i64) {
-        self.push(TreeNode { val, children: Vec::new() });
+        self.push(TreeNode {
+            val,
+            children: Vec::new(),
+        });
     }
 
     fn push_file(&mut self, vec: Vec<u8>) {
@@ -325,4 +337,3 @@ fn syscall(call: i64) -> i64 {
 fn syscall(call: i64) -> i64 {
     -1
 }
-
