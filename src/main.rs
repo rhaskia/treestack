@@ -9,6 +9,9 @@ mod repl;
 use crate::lexer::Lexer;
 use crate::interpreter::Interpreter;
 use clap::{Parser, command, arg};
+use crossterm::event::KeyCode;
+use error::{PositionError, Positioned, RangeError};
+use parser::Node;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about=None)]
@@ -36,19 +39,27 @@ fn run_file(file: &str, debug: bool) {
         Err(err) => { eprintln!("{}", err); return; }
     };
 
+    let ast = match compile_ast(program.clone(), debug) {
+        Ok(ast) => ast,
+        Err(err) => { 
+            err.pretty_print(&program);
+            return;
+        }
+    };
+    
+    if let Err(err) = Interpreter::new(debug).parse(ast) {
+        err.pretty_print(&program);
+    }
+}
+
+fn compile_ast(program: String, debug: bool) -> Result<Vec<Positioned<Node>>, RangeError> {
     let tokens = Lexer::new(program).parse();
     if debug { println!("{tokens:?}"); }// FIT behind debug flag
 
-    let ast = match parser::Parser::new(tokens).parse() {
-        Ok(ast) => ast,
-        Err(err) => { eprintln!("{:?}", err.pretty()); return; }
-    };
+    let ast = parser::Parser::new(tokens).parse()?;
     if debug { println!("{ast:?}"); } // FIT behind debug flag
 
-    let result = Interpreter::new(debug).parse(ast);
-    if let Err(msg) = result {
-        eprintln!("{msg:?}");
-    }
+    Ok(ast)
 }
 
 fn load_file(path: &str) -> Result<String, String> {

@@ -4,11 +4,11 @@ use crate::parser::Node;
 use crate::tree::TreeNode;
 use fehler::throws;
 use std::collections::HashMap;
-use std::ops;
+use std::ops::{self, Range, RangeBounds};
 #[cfg(target_os = "linux")]
 use syscalls::{raw_syscall, Sysno};
 
-type Error = String;
+type Error = RangeError;
 
 #[derive(Default, Clone, Debug)]
 struct Pointer {
@@ -34,6 +34,7 @@ pub struct Interpreter {
     pointer: Pointer,
     pointers: HashMap<String, Pointer>,
     debug: bool,
+    range: Range<usize>,
 }
 
 impl Interpreter {
@@ -46,16 +47,16 @@ impl Interpreter {
 
     pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) -> Result<(), RangeError> {
         for instruction in instructions.into_iter() {
-            let pos = instruction.range;
+            self.range = instruction.range;
             let inst = format!("{:?}: ", instruction.inner);
             match instruction.inner {
                 Node::Push(u) => self.push_raw(u),
                 Node::String(string) => self.push_string(string),
-                Node::Operator(op) => self.eval_op(op.clone()).position(pos)?,
+                Node::Operator(op) => self.eval_op(op.clone())?,
                 Node::Call(call) => {
                     match self.functions.get(&call) {
                         Some(f) => self.parse(f.clone())?,
-                        None => self.call(&call).position(pos)?,
+                        None => self.call(&call)?,
                     };
                 }
                 Node::While(expr) => {
@@ -75,7 +76,7 @@ impl Interpreter {
                 Node::Function(name, f) => {
                     self.functions.insert(name, f);
                 }
-                Node::Pointer(name, action) => self.call_pointer(name, action).position(pos)?,
+                Node::Pointer(name, action) => self.call_pointer(name, action)?,
             }
 
             if self.debug {
@@ -86,8 +87,7 @@ impl Interpreter {
         Ok(())
     }
 
-    #[throws]
-    pub fn call(&mut self, call: &str) {
+    pub fn call(&mut self, call: &str) -> Result<(), RangeError> {
         match call {
             "swap" => {
                 let first = self.pop()?;
@@ -106,8 +106,10 @@ impl Interpreter {
             "write" => {
                 let file = self.pop_string()?;
                 let to_write = self.pop_string()?;
-                std::fs::write(file, to_write)
-                    .map_err(|e| format!("Writing to file failed {e}"))?;
+                let error = |e: std::io::Error| self
+                    .error::<()>(&format!("Writing to file failed {e}"))
+                    .unwrap_err();
+                std::fs::write(file, to_write).map_err(|e| error(e))?;
             }
             "syscall" => {
                 let call = self.pop()?.val;
@@ -139,10 +141,15 @@ impl Interpreter {
                 let rev_children = self.current().children.clone().into_iter().rev().collect();
                 self.current().children = rev_children;
             }
-            _ => {
-                self.error("Function not found")?
+            "eval" => {
+                let program = self.pop_string()?;
+                let ast = crate::compile_ast(program, self.debug)?;
+                self.parse(ast)?;
             }
-        }
+            _ => self.error("Function not found")?,
+        };
+
+        Ok(())
     }
 
     #[throws]
@@ -160,23 +167,18 @@ impl Interpreter {
 
     #[throws]
     fn call_pointer(&mut self, name: String, action: PointerAction) {
+        let error = self
+            .error::<()>(&format!("No pointer named {name}"))
+            .unwrap_err();
         match action {
             PointerAction::Jump => {
-                self.pointer = self
-                    .pointers
-                    .get(&name)
-                    .ok_or_else(|| format!("No pointer named {name}"))?
-                    .clone();
+                self.pointer = self.pointers.get(&name).ok_or_else(|| error)?.clone();
             }
             PointerAction::Create => {
                 self.pointers.insert(name, self.pointer.clone());
             }
             PointerAction::Push => {
-                let pointer = self
-                    .pointers
-                    .get(&name)
-                    .ok_or_else(|| format!("No pointer named {name}"))?
-                    .clone();
+                let pointer = self.pointers.get(&name).ok_or_else(|| error)?.clone();
                 let value = self.at_pointer(pointer.clone()).children[pointer.branch - 1].val;
                 self.push_raw(value)
             }
@@ -300,7 +302,10 @@ impl Interpreter {
     }
 
     pub fn error<T>(&self, msg: &str) -> Result<T, Error> {
-        Err(format!("Encountered runtime error: {msg}"))
+        Err(RangeError {
+            message: msg.to_string(),
+            range: self.range.clone(),
+        })
     }
 }
 

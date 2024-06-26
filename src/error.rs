@@ -8,8 +8,20 @@ pub struct RangeError {
 }
 
 impl RangeError {
-    pub fn pretty(&self) -> String {
-        format!("{},{}: {}", self.range.start, self.range.end, self.message)
+    pub fn pretty_print(&self, program: &str) {
+        let Range { start, end } = self.range;
+        println!("\n\x1b[31mError\x1b[0m: {}:{}: {}", start, end, self.message);
+
+        let lines = program.lines();
+        let mut line_start = 0;
+
+        for line in lines {
+            let line_end = line_start + line.len();
+            println!("{line_start} {line_end}");
+            println!("{line}");
+            if true { println!("{}{}", " ".repeat(start - line_start), "^".repeat(end + 1 - start)); }
+            line_start = line_end;
+        }
     } 
 }
 

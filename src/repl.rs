@@ -60,7 +60,7 @@ pub fn start_repl(debug: bool) {
                 let tokens = Lexer::new(input.clone()).parse();
                 let ast = Parser::new(tokens).parse().unwrap();
                 let result = interpreter.parse(ast);
-                if let Err(msg) = result { println!("{msg:?}"); }
+                if let Err(msg) = result { msg.pretty_print(&input); }
                 commands.push(input.clone());
                 input.clear();
                 cursor = 0;
