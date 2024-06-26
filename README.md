@@ -9,3 +9,4 @@ Syntax is derived of 3-4 main types: [operators](operators.md),
 
 # Ideas
 https://wiki.c2.com/?JoyLanguage
+https://hypercubed.github.io/joy/html/j01tut.html

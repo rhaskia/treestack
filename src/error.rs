@@ -25,19 +25,6 @@ impl RangeError {
     } 
 }
 
-pub trait PositionError<T> {
-    fn position(self, range: Range<usize>) -> Result<T, RangeError> where Self: Sized;
-}
-
-impl<T> PositionError<T> for Result<T, String> {
-    fn position(self, range: Range<usize>) -> Result<T, RangeError> {
-        match self {
-            Ok(t) => Ok(t),
-            Err(message) => Err(RangeError { message, range })
-        }
-    }
-}
-
 pub struct Positioned<T> {
     pub inner: T,
     pub range: Range<usize>

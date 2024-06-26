@@ -9,8 +9,7 @@ mod repl;
 use crate::lexer::Lexer;
 use crate::interpreter::Interpreter;
 use clap::{Parser, command, arg};
-use crossterm::event::KeyCode;
-use error::{PositionError, Positioned, RangeError};
+use error::{Positioned, RangeError};
 use parser::Node;
 
 #[derive(Parser, Debug)]

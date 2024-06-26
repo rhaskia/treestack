@@ -1,10 +1,10 @@
-use crate::error::{PositionError, Positioned, RangeError};
+use crate::error::{Positioned, RangeError};
 use crate::lexer::{PointerAction, Token};
 use crate::parser::Node;
 use crate::tree::TreeNode;
 use fehler::throws;
 use std::collections::HashMap;
-use std::ops::{self, Range, RangeBounds};
+use std::ops::{self, Range};
 #[cfg(target_os = "linux")]
 use syscalls::{raw_syscall, Sysno};
 
@@ -39,10 +39,7 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new(debug: bool) -> Self {
-        Self {
-            debug,
-            ..Default::default()
-        }
+        Self { debug, ..Default::default() }
     }
 
     pub fn parse(&mut self, instructions: Vec<Positioned<Node>>) -> Result<(), RangeError> {
@@ -106,9 +103,9 @@ impl Interpreter {
             "write" => {
                 let file = self.pop_string()?;
                 let to_write = self.pop_string()?;
-                let error = |e: std::io::Error| self
-                    .error::<()>(&format!("Writing to file failed {e}"))
-                    .unwrap_err();
+                let error = |e: std::io::Error| {
+                    self.error::<()>(&format!("Writing to file failed {e}")).unwrap_err()
+                };
                 std::fs::write(file, to_write).map_err(|e| error(e))?;
             }
             "syscall" => {
@@ -127,15 +124,30 @@ impl Interpreter {
                 let second = self.before()?;
                 self.push(second);
             }
+            "concat" => {
+                let first = self.pop()?;
+                let second = self.pop()?;
+                self.push(TreeNode { val: first.val + second.val, children: [first.children, second.children].concat() })
+            }
+            "map" => {
+                let program = self.pop_string()?; // change to 
+                let ast = crate::compile_ast(program, self.debug)?;
+                self.parse(ast)?;
+            }
+            "filter" => {
+                // eval while check yeah
+            }
             "print" => print!("{}", self.pop_string()?),
             "group" => {
                 let length = self.pop()?.val;
                 let children: Result<Vec<TreeNode<i64>>, Error> =
                     (0..length).map(|_| self.pop()).collect();
-                self.push(TreeNode {
-                    val: 0,
-                    children: children?,
-                })
+                self.push(TreeNode { val: 0, children: children? })
+            }
+            "rotate" => {
+                let amount = self.pop()?.val as usize;
+                let vec = self.current().children.clone();
+                self.current().children = rotate_vec_slice(vec, amount)
             }
             "rev" => {
                 let rev_children = self.current().children.clone().into_iter().rev().collect();
@@ -167,9 +179,7 @@ impl Interpreter {
 
     #[throws]
     fn call_pointer(&mut self, name: String, action: PointerAction) {
-        let error = self
-            .error::<()>(&format!("No pointer named {name}"))
-            .unwrap_err();
+        let error = self.error::<()>(&format!("No pointer named {name}")).unwrap_err();
         match action {
             PointerAction::Jump => {
                 self.pointer = self.pointers.get(&name).ok_or_else(|| error)?.clone();
@@ -206,10 +216,7 @@ impl Interpreter {
     }
 
     fn push_raw(&mut self, val: i64) {
-        self.push(TreeNode {
-            val,
-            children: Vec::new(),
-        });
+        self.push(TreeNode { val, children: Vec::new() });
     }
 
     fn push_file(&mut self, vec: Vec<u8>) {
@@ -302,10 +309,7 @@ impl Interpreter {
     }
 
     pub fn error<T>(&self, msg: &str) -> Result<T, Error> {
-        Err(RangeError {
-            message: msg.to_string(),
-            range: self.range.clone(),
-        })
+        Err(RangeError { message: msg.to_string(), range: self.range.clone() })
     }
 }
 
@@ -328,6 +332,14 @@ impl Token {
             _ => panic!("Operator not implemented {:?}", self),
         }
     }
+}
+
+fn rotate_vec_slice(mut vec: Vec<TreeNode<i64>>, amount: usize) -> Vec<TreeNode<i64>> {
+    let len = vec.len();
+    let new_amount = amount % len; // Handle rotations greater than vector length
+    let first_part = vec.drain(..new_amount).collect::<Vec<TreeNode<i64>>>();
+    let second_part = vec;
+    [second_part, first_part].concat()
 }
 
 #[cfg(target_os = "linux")]
