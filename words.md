@@ -16,5 +16,13 @@ if { expr } else { expr }
 while { expr }
 if and while work off the stack value being "truthy", or not 0
 
+# List control
+concat
+join
+flatten
+reverse
+size
+more combinators
+
 fn function_name { expr }
 allows for creating words from expressions
