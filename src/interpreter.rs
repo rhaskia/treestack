@@ -236,11 +236,9 @@ impl Interpreter {
     }
 
     fn push_string(&mut self, string: String) {
-        let length = string.len();
-        for char in string.chars() {
-            self.push_raw(char as i64);
-        }
-        self.push_raw(length as i64);
+        let length = string.len() as i64;
+        let children = string.chars().map(|c| TreeNode::new(c as i64)).collect();
+        self.push(TreeNode { val: length, children });
     }
 
     pub fn push(&mut self, node: TreeNode<i64>) {

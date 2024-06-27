@@ -15,6 +15,10 @@ impl<T> TreeNode<T> {
             self.children.into_iter().zip(rhs.children).map(|(l, r)| l.eval(r, op)).collect();
         Self { val: op(self.val, rhs.val), children }
     }
+
+    pub fn new(val: T) -> Self {
+        Self { val, children: Vec::new() }
+    }
 }
 
 impl<T: Display> Display for TreeNode<T> {
