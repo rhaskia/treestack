@@ -77,7 +77,7 @@ impl Interpreter {
             }
 
             if self.debug {
-                println!("{inst}: {}, {:?}", self.stack, self.pointer);
+                println!("{inst}: {}, {:?}", self.current(), self.pointer);
             }
         }
 
@@ -142,7 +142,7 @@ impl Interpreter {
                 let length = self.pop()?.val;
                 let children: Result<Vec<TreeNode<i64>>, Error> =
                     (0..length).map(|_| self.pop()).collect();
-                self.push(TreeNode { val: 0, children: children? })
+                self.push(TreeNode { val: length, children: children? })
             }
             "rotate" => {
                 let amount = self.pop()?.val as usize;
@@ -166,15 +166,9 @@ impl Interpreter {
 
     #[throws]
     pub fn pop_string(&mut self) -> String {
-        let length = self.pop()?.val;
-        let mut string = String::new();
-
-        for _ in 0..length {
-            let c = char::from_u32(self.pop()?.val as u32).unwrap();
-            string.insert(0, c);
-        }
-
-        string
+        let children = self.pop()?.children;
+        let string: Option<String> = children.iter().map(|i| char::from_u32(i.val as u32)).collect();
+        string.ok_or(self.error::<String>("Failed to parse string").unwrap_err())?
     }
 
     #[throws]
@@ -259,13 +253,19 @@ impl Interpreter {
             Comma => print!("{}", char::from_u32(self.pop()?.val as u32).unwrap()),
             OpenBracket => {
                 let branch = self.pointer.branch;
+                if branch == 0 || branch > self.current().len() { self.error("Tried opening non-existant branch")?; }
                 let len = self.current()[branch - 1].len();
-                // BAD
                 self.pointer.open_branch(len);
             }
             CloseBracket => self.pointer.close_branch(),
-            OpenParen => self.pointer.branch += 1,
-            CloseParen => self.pointer.branch -= 1,
+            OpenParen => {
+                if self.pointer.branch > self.current().len() { self.error("Pointer fell off branch")?; }
+                self.pointer.branch += 1;
+            }
+            CloseParen => { 
+                if self.pointer.branch == 0 { self.error("Cannot move further inwards on branch")?; }
+                self.pointer.branch -= 1;
+            }
             Semicolon => todo!(),
             PlusPlus => {
                 self.on()?.val += 1;

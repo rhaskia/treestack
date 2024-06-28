@@ -41,13 +41,13 @@ fn run_file(file: &str, debug: bool) {
     let ast = match compile_ast(program.clone(), debug) {
         Ok(ast) => ast,
         Err(err) => { 
-            err.pretty_print(&program);
+            err.pretty_print(&program, true);
             return;
         }
     };
     
     if let Err(err) = Interpreter::new(debug).parse(ast) {
-        err.pretty_print(&program);
+        err.pretty_print(&program, true);
     }
 }
 

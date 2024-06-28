@@ -21,18 +21,17 @@ impl<T> TreeNode<T> {
     }
 }
 
-impl<T: Display> Display for TreeNode<T> {
+impl<T: Display + Debug> Display for TreeNode<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let output = &self.draw(0);
         write!(f, "{}\x1b[0m", output)
     }
 }
 
-impl<T: Display> TreeNode<T> {
+impl<T: Display + Debug> TreeNode<T> {
     fn draw(&self, depth: usize) -> String {
         if self.children.is_empty() {
-            let val = format!("{}", self.val);
-            return val;
+            return format!("\x1b[0m{}", self.val);
         }
 
         let code = format!("\x1b[38;5;{}m", depth + 1);

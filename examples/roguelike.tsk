@@ -1,18 +1,23 @@
-0 [ 0, 0 ] 1 [  ]
+&root 0 [ 0, 0 ] 1 [  ]
 2 [ &screen 20 while { 1 [ 80 while { 1 swap -- } ] swap -- } ]
 
 fn drawscreen {
-    ^screen
-    27 , "[2J" print
-    ] dup [
+    ^root (((
+    [
     drop
     while { 
         [ drop while { . } ]
         drop
         10 ,
     }
+    ]
 }
 
-^screen 
-( [ [ ++ ]]
+fn draw_room {
+    ^root
+    (((
+    4 while [ { [++] ( } ]
+}
+
+draw_room
 drawscreen

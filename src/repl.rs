@@ -49,10 +49,12 @@ pub fn start_repl(debug: bool) {
                 if scrollback == commands.len() { continue; }
                 scrollback += 1;
                 input = commands[commands.len() - scrollback].clone();
+                cursor = input.len();
             }
             KeyCode::Down => {
                 scrollback -= 1;
                 input = commands[commands.len() - scrollback].clone();
+                cursor = input.len();
             }
             KeyCode::Enter => {
                 print!("\n\r");
@@ -60,7 +62,7 @@ pub fn start_repl(debug: bool) {
                 let tokens = Lexer::new(input.clone()).parse();
                 let ast = Parser::new(tokens).parse().unwrap();
                 let result = interpreter.parse(ast);
-                if let Err(msg) = result { msg.pretty_print(&input); }
+                if let Err(msg) = result { msg.pretty_print(&input, false); }
                 commands.push(input.clone());
                 input.clear();
                 cursor = 0;
