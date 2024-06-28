@@ -2,8 +2,10 @@ use crate::error::{Positioned, RangeError};
 use crate::lexer::{PointerAction, Token};
 use crate::parser::Node;
 use crate::tree::TreeNode;
+use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 use fehler::throws;
 use std::collections::HashMap;
+use std::io::Read;
 use std::ops::{self, Range};
 use rand::Rng;
 #[cfg(target_os = "linux")]
@@ -219,6 +221,13 @@ impl Interpreter {
                 let random_no: i64 = rand::thread_rng().gen_range(min..max);
                 self.push_raw(random_no)
             }
+            "rawmode" => {
+                if self.truthy() {
+                    enable_raw_mode();
+                } else {
+                    disable_raw_mode();
+                }
+            }
             _ => self.error("Function not found")?,
         };
 
@@ -350,6 +359,11 @@ impl Interpreter {
             Not => self.on()?.val = (self.on()?.val == 0) as i64,
             Grave => {
                 self.pop()?;
+            }
+            Question => {
+                let mut chars = [0; 1];
+                let _ = std::io::stdin().read(&mut chars);
+                self.push_raw(chars[0] as i64);
             }
             _ => {
                 let rhs = self.pop()?;

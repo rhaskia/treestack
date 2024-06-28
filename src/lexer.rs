@@ -40,6 +40,7 @@ impl Lexer {
                 ',' => self.push(Token::Comma),
                 '=' => self.push(Token::Equals),
                 '!' => self.push(Token::Not),
+                '?' => self.push(Token::Question),
 
                 '|' => match_two!(self, '|', Or),
 
@@ -255,6 +256,7 @@ pub enum Token {
     Lesser,
     LesserThan,
     Not,
+    Question,
 
     Period,
     Comma,
