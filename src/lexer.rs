@@ -113,6 +113,13 @@ impl Lexer {
                     self.next();
                     self.push_long(Token::String(string), start)
                 }
+
+                '\'' => {
+                    let start = self.index;
+                    let char = self.next().unwrap();
+                    self.next();
+                    self.push_long(Token::Literal(char as i64), start);
+                }
                 _ => {} 
             };
         }             

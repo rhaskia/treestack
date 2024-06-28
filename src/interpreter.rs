@@ -5,6 +5,7 @@ use crate::tree::TreeNode;
 use fehler::throws;
 use std::collections::HashMap;
 use std::ops::{self, Range};
+use rand::Rng;
 #[cfg(target_os = "linux")]
 use syscalls::{raw_syscall, Sysno};
 
@@ -77,7 +78,8 @@ impl Interpreter {
             }
 
             if self.debug {
-                println!("{inst}: {}, {:?}", self.current(), self.pointer);
+                let pointer = self.pointer.clone();
+                println!("{inst}: {}, {:?}", self.current(), pointer);
             }
         }
 
@@ -127,10 +129,13 @@ impl Interpreter {
             "concat" => {
                 let first = self.pop()?;
                 let second = self.pop()?;
-                self.push(TreeNode { val: first.val + second.val, children: [first.children, second.children].concat() })
+                self.push(TreeNode {
+                    val: first.val + second.val,
+                    children: [first.children, second.children].concat(),
+                })
             }
             "map" => {
-                let program = self.pop_string()?; // change to 
+                let program = self.pop_string()?; // change to
                 let ast = crate::compile_ast(program, self.debug)?;
                 self.parse(ast)?;
             }
@@ -158,6 +163,12 @@ impl Interpreter {
                 let ast = crate::compile_ast(program, self.debug)?;
                 self.parse(ast)?;
             }
+            "random" => {
+                let max = self.pop()?.val;
+                let min = self.pop()?.val;
+                let random_no: i64 = rand::thread_rng().gen_range(min..max);
+                self.push_raw(random_no)
+            }
             _ => self.error("Function not found")?,
         };
 
@@ -167,7 +178,8 @@ impl Interpreter {
     #[throws]
     pub fn pop_string(&mut self) -> String {
         let children = self.pop()?.children;
-        let string: Option<String> = children.iter().map(|i| char::from_u32(i.val as u32)).collect();
+        let string: Option<String> =
+            children.iter().map(|i| char::from_u32(i.val as u32)).collect();
         string.ok_or(self.error::<String>("Failed to parse string").unwrap_err())?
     }
 
@@ -183,7 +195,9 @@ impl Interpreter {
             }
             PointerAction::Push => {
                 let pointer = self.pointers.get(&name).ok_or_else(|| error)?.clone();
-                if !self.is_pointer_valid(&pointer) { return; } // Error
+                if !self.is_pointer_valid(&pointer) {
+                    return;
+                } // Error
                 let value = self.at_pointer(pointer.clone()).children[pointer.branch - 1].val;
                 self.push_raw(value)
             }
@@ -191,9 +205,13 @@ impl Interpreter {
     }
 
     fn is_pointer_valid(&mut self, pointer: &Pointer) -> bool {
-       if pointer.branch == 0 { return false; } 
-       if self.current().children.len() < pointer.branch { return false; }
-       true
+        if pointer.branch == 0 {
+            return false;
+        }
+        if self.current().children.len() < pointer.branch {
+            return false;
+        }
+        true
     }
 
     fn current(&mut self) -> &mut TreeNode<i64> {
@@ -211,7 +229,7 @@ impl Interpreter {
 
     fn truthy(&mut self) -> bool {
         let branch = self.pointer.branch;
-        if branch == 0 {
+        if branch == 0 || branch > self.current().len() {
             return false;
         }
         self.current()[branch - 1].val > 0
@@ -253,18 +271,24 @@ impl Interpreter {
             Comma => print!("{}", char::from_u32(self.pop()?.val as u32).unwrap()),
             OpenBracket => {
                 let branch = self.pointer.branch;
-                if branch == 0 || branch > self.current().len() { self.error("Tried opening non-existant branch")?; }
+                if branch == 0 || branch > self.current().len() {
+                    self.error("Tried opening non-existant branch")?;
+                }
                 let len = self.current()[branch - 1].len();
                 self.pointer.open_branch(len);
             }
             CloseBracket => self.pointer.close_branch(),
             OpenParen => {
-                if self.pointer.branch > self.current().len() { self.error("Pointer fell off branch")?; }
-                self.pointer.branch += 1;
-            }
-            CloseParen => { 
-                if self.pointer.branch == 0 { self.error("Cannot move further inwards on branch")?; }
+                if self.pointer.branch == 0 {
+                    self.error("Cannot move further inwards on branch")?;
+                }
                 self.pointer.branch -= 1;
+            }
+            CloseParen => {
+                if self.pointer.branch > self.current().len() {
+                    self.error("Pointer fell off branch")?;
+                }
+                self.pointer.branch += 1;
             }
             Semicolon => todo!(),
             PlusPlus => {
@@ -290,6 +314,9 @@ impl Interpreter {
         let branch = self.pointer.branch;
         if self.current().children.is_empty() || branch == 0 {
             return self.error("Stack underflow");
+        }
+        if self.current().len() < branch {
+            return self.error("Cannot pop due to reasons sorry </3");
         }
         let value = self.current().remove(branch - 1);
         self.pointer.branch -= 1;
