@@ -157,22 +157,40 @@ impl Interpreter {
                 let mut popped = 0;
 
                 while self.pointer.branch > 0 {
+                    let current = self.on()?.clone();
+                    self.push(current);
                     self.parse(ast.clone())?;
                     let truthy = self.truthy();
                     self.pop()?;
-
-                    if !truthy {
-                        self.pop()?;
-                        popped += 1;
-                    } 
-
+                    
                     current_offset += 1;
 
+                    if !truthy {
+                        popped += 1;
+                        self.pop()?;
+                    } 
+
                     self.pointer = start_pointer.clone();
-                    self.pointer.branch -= current_offset + popped;
+                    self.pointer.branch -= current_offset;
                 }
 
                 self.pointer = start_pointer.clone();
+                self.pointer.branch -= popped;
+            }
+            "recmap" => {
+
+            }
+            "fold" => {
+                let program = self.pop_string()?; // change to
+                let ast = crate::compile_ast(program, self.debug)?;
+            }
+            "range" => {
+                let max = self.pop()?;
+                let min = self.pop()?;
+
+                for i in min.val..max.val {
+                    self.push_raw(i);
+                }
             }
             "print" => print!("{}", self.pop_string()?),
             "group" => {

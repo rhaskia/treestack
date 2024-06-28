@@ -1,3 +1,6 @@
+# Operators
+
+## Simple Operators
 `+` plus
 `-` minus
 `/` divide
@@ -16,7 +19,7 @@
 `>`, `<`, `<=`, `>=` regular compare operaters
 `=` equals
  
-# Requires a pointer name
+## Pointers
 `&` creates a pointer if followed with a name
 `*` pushes the value at the pointer to the current stack
 `^` jumps to the pointer
