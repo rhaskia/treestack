@@ -18,12 +18,21 @@ fn draw_room {
     ))) 
     3 6 random &height
     3 6 random &width
-    0 10 random &x
-    0 10 random &y
+    1 14 random &y
+    1 74 random &x
     ((((
-    [ ) *height
+    [ ( 
+    
+    *y while { swap ( -- } drop
+
+    *height
     while { 
-        [ ) *width
+        -- swap 
+        [ ( 
+
+        *x while { swap ( -- } drop
+
+        *width
         while {
             -- swap 1 + (
         } drop
@@ -33,8 +42,5 @@ fn draw_room {
     ]
 }
 
-draw_room
-draw_room
-draw_room
-draw_room
+^root ) [ 10 &count while { draw_room ^count -- }
 drawscreen

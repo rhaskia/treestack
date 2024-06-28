@@ -137,7 +137,17 @@ impl Interpreter {
             "map" => {
                 let program = self.pop_string()?; // change to
                 let ast = crate::compile_ast(program, self.debug)?;
-                self.parse(ast)?;
+                let start_pointer = self.pointer.clone();
+                let mut current_offset = 0;  
+
+                while self.pointer.branch > 0 {
+                    self.parse(ast.clone())?;
+                    current_offset += 1;
+                    self.pointer = start_pointer.clone();
+                    self.pointer.branch -= current_offset;
+                }
+
+                self.pointer = start_pointer.clone();
             }
             "filter" => {
                 // eval while check yeah
@@ -285,7 +295,7 @@ impl Interpreter {
                 self.pointer.branch -= 1;
             }
             CloseParen => {
-                if self.pointer.branch > self.current().len() {
+                if self.pointer.branch >= self.current().len() {
                     self.error("Pointer fell off branch")?;
                 }
                 self.pointer.branch += 1;
@@ -332,6 +342,9 @@ impl Interpreter {
         if self.current().children.is_empty() || position == 0 {
             return self.error("Stack underflow");
         }
+        if self.current().len() < position {
+            return self.error("Tried to reach item outside stack");
+        }  
         let value = &mut self.current()[position - 1];
         Ok(value)
     }
