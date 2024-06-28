@@ -150,7 +150,29 @@ impl Interpreter {
                 self.pointer = start_pointer.clone();
             }
             "filter" => {
-                // eval while check yeah
+                let program = self.pop_string()?; // change to
+                let ast = crate::compile_ast(program, self.debug)?;
+                let start_pointer = self.pointer.clone();
+                let mut current_offset = 0;  
+                let mut popped = 0;
+
+                while self.pointer.branch > 0 {
+                    self.parse(ast.clone())?;
+                    let truthy = self.truthy();
+                    self.pop()?;
+
+                    if !truthy {
+                        self.pop()?;
+                        popped += 1;
+                    } 
+
+                    current_offset += 1;
+
+                    self.pointer = start_pointer.clone();
+                    self.pointer.branch -= current_offset + popped;
+                }
+
+                self.pointer = start_pointer.clone();
             }
             "print" => print!("{}", self.pop_string()?),
             "group" => {
