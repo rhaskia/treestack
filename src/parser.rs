@@ -1,7 +1,7 @@
-use std::ops::Range;
-use crate::error::{RangeError, Positioned, position};
-use crate::lexer::{Keyword, Token, PointerAction};
+use crate::error::{position, Positioned, RangeError};
+use crate::lexer::{Keyword, PointerAction, Token};
 use fehler::throws;
+use std::ops::Range;
 
 type Error = RangeError;
 
@@ -32,7 +32,9 @@ impl Parser {
                 Token::Word(w) => expr.push(position(Node::Call(w), range)),
                 Token::Keyword(k) => expr.push(self.statement(k)?),
                 Token::CloseBrace => break,
-                Token::Pointer(name, action) => expr.push(position(Node::Pointer(name, action), range)),
+                Token::Pointer(name, action) => {
+                    expr.push(position(Node::Pointer(name, action), range))
+                }
                 Token::String(string) => expr.push(position(Node::String(string), range)),
                 op => expr.push(position(Node::Operator(op), range)),
             }
@@ -58,7 +60,7 @@ impl Parser {
                 }
 
                 Node::If(if_expr, else_expr)
-            },
+            }
             Keyword::Else => unreachable!(),
             Keyword::While => {
                 self.ensure_next(Token::OpenBrace)?;
@@ -72,7 +74,7 @@ impl Parser {
                 } else {
                     panic!()
                 }
-            },
+            }
         };
         let end = self.previous().unwrap().range.end;
 
@@ -93,10 +95,10 @@ impl Parser {
 
     pub fn ensure_next(&mut self, token: Token) -> Result<Positioned<Token>, Error> {
         let next = self.next().unwrap();
-        if next.inner == token { 
+        if next.inner == token {
             return Ok(next);
         }
-        return Err(self.error(format!("Expected {token:?} but found {:?}", next.inner), next.range))
+        return Err(self.error(format!("Expected {token:?} but found {:?}", next.inner), next.range));
     }
 
     pub fn error(&self, message: String, range: Range<usize>) -> Error {
@@ -122,4 +124,3 @@ pub enum Node {
     Function(String, Vec<Positioned<Node>>),
     String(String),
 }
-

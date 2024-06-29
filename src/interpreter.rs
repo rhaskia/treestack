@@ -2,12 +2,12 @@ use crate::error::{Positioned, RangeError};
 use crate::lexer::{PointerAction, Token};
 use crate::parser::Node;
 use crate::tree::TreeNode;
-use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use fehler::throws;
+use rand::Rng;
 use std::collections::HashMap;
 use std::io::Read;
 use std::ops::{self, Range};
-use rand::Rng;
 #[cfg(target_os = "linux")]
 use syscalls::{raw_syscall, Sysno};
 
@@ -140,7 +140,7 @@ impl Interpreter {
                 let program = self.pop_string()?; // change to
                 let ast = crate::compile_ast(program, self.debug)?;
                 let start_pointer = self.pointer.clone();
-                let mut current_offset = 0;  
+                let mut current_offset = 0;
 
                 while self.pointer.branch > 0 {
                     self.parse(ast.clone())?;
@@ -155,7 +155,7 @@ impl Interpreter {
                 let program = self.pop_string()?; // change to
                 let ast = crate::compile_ast(program, self.debug)?;
                 let start_pointer = self.pointer.clone();
-                let mut current_offset = 0;  
+                let mut current_offset = 0;
                 let mut popped = 0;
 
                 while self.pointer.branch > 0 {
@@ -164,13 +164,13 @@ impl Interpreter {
                     self.parse(ast.clone())?;
                     let truthy = self.truthy();
                     self.pop()?;
-                    
+
                     current_offset += 1;
 
                     if !truthy {
                         popped += 1;
                         self.pop()?;
-                    } 
+                    }
 
                     self.pointer = start_pointer.clone();
                     self.pointer.branch -= current_offset;
@@ -179,18 +179,12 @@ impl Interpreter {
                 self.pointer = start_pointer.clone();
                 self.pointer.branch -= popped;
             }
-            "recmap" => {
-
-            }
-            "fold" => {
-                let program = self.pop_string()?; // change to
-                let ast = crate::compile_ast(program, self.debug)?;
-            }
+            "recmap" => {}
             "range" => {
                 let max = self.pop()?;
                 let min = self.pop()?;
 
-                for i in min.val..max.val {
+                for i in min.val..=max.val {
                     self.push_raw(i);
                 }
             }
@@ -199,7 +193,14 @@ impl Interpreter {
                 let length = self.pop()?.val;
                 let children: Result<Vec<TreeNode<i64>>, Error> =
                     (0..length).map(|_| self.pop()).collect();
-                self.push(TreeNode { val: length, children: children? })
+                let children = children?.into_iter().rev().collect();
+                self.push(TreeNode { val: length, children })
+            }
+            "flatten" => {
+                let current = self.current().clone();
+                let flattened = current.flatten();
+                self.current().children = flattened;
+                // for each node, extract children into upper
             }
             "rotate" => {
                 let amount = self.pop()?.val as usize;
@@ -223,9 +224,11 @@ impl Interpreter {
             }
             "rawmode" => {
                 if self.truthy() {
-                    enable_raw_mode();
+                    enable_raw_mode()
+                        .map_err(|_| self.error::<()>("Failed to enter raw mode").unwrap_err())?;
                 } else {
-                    disable_raw_mode();
+                    disable_raw_mode()
+                        .map_err(|_| self.error::<()>("Failed to exit raw mode").unwrap_err())?;
                 }
             }
             _ => self.error("Function not found")?,
@@ -349,7 +352,6 @@ impl Interpreter {
                 }
                 self.pointer.branch += 1;
             }
-            Semicolon => todo!(),
             PlusPlus => {
                 self.on()?.val += 1;
             }
@@ -398,7 +400,7 @@ impl Interpreter {
         }
         if self.current().len() < position {
             return self.error("Tried to reach item outside stack");
-        }  
+        }
         let value = &mut self.current()[position - 1];
         Ok(value)
     }

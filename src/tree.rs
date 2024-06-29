@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Display, Formatter, Debug},
+    fmt::{Debug, Display, Formatter},
     ops::{Add, Deref, DerefMut, Mul, Sub},
 };
 
@@ -19,6 +19,16 @@ impl<T> TreeNode<T> {
     pub fn new(val: T) -> Self {
         Self { val, children: Vec::new() }
     }
+
+    pub fn flatten(self) -> Vec<TreeNode<T>> {
+        let mut new_vec = Vec::new();
+        for child in self.children {
+            new_vec.push(TreeNode::new(child.val));
+            let mut children = child.children;
+            new_vec.append(&mut children);
+        }
+        new_vec
+    }
 }
 
 impl<T: Display + Debug> Display for TreeNode<T> {
@@ -36,10 +46,8 @@ impl<T: Display + Debug> TreeNode<T> {
 
         let code = format!("\x1b[38;5;{}m", depth + 1);
         let above = format!("\x1b[38;5;{}m", depth);
-        let children = self.children
-            .iter()
-            .map(|n| n.draw(depth + 1))
-            .collect::<Vec<String>>().join(", ");
+        let children =
+            self.children.iter().map(|n| n.draw(depth + 1)).collect::<Vec<String>>().join(", ");
 
         let children = format!("{code}[{}]{above}", children);
 
@@ -69,7 +77,7 @@ impl<T: Sub<Output = T>> Sub for TreeNode<T> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self { val: self.val - rhs.val, children: self.children } // TODO children mult
+        self.eval(rhs, Sub::sub)
     }
 }
 

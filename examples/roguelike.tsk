@@ -1,3 +1,7 @@
+; this is my evil creation
+; it draws boxes onto a screen
+; and is so messy
+
 &root 0 [ 0, 0 ] 1 [ 3 &x 4 &y ]
 2 [ &screen 20 while { 1 [ 80 while { 1 swap -- } ] swap -- } ]
 

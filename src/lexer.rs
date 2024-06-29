@@ -1,6 +1,6 @@
 use crate::error::Positioned;
-use strum::EnumIs;
 use macros::*;
+use strum::EnumIs;
 
 pub struct Lexer {
     index: usize,
@@ -19,8 +19,6 @@ impl Lexer {
 
         while let Some(next_char) = self.next() {
             match next_char {
-                ';' => self.push(Token::Semicolon),
-
                 '+' => match_tokens!(self, Plus, '+' => PlusPlus),
                 '-' => match_tokens!(self, Minus, '-' => MinusMinus),
                 '/' => self.push(Token::Slash),
@@ -47,7 +45,14 @@ impl Lexer {
                 '<' => match_tokens!(self, Greater, '=' => GreaterThan),
                 '>' => match_tokens!(self, Lesser, '=' => LesserThan),
 
-                // DRY this
+                ';' => {
+                    while self.peek() != Some('\n') {
+                        if self.next() == Some(';') {
+                            break;
+                        }
+                    }
+                }
+
                 '^' => {
                     if self.peek().is_alphabetic() {
                         let start = self.index;
@@ -57,7 +62,7 @@ impl Lexer {
                     }
 
                     self.push(Token::Carat);
-                },
+                }
 
                 '*' => {
                     if self.peek().is_alphabetic() {
@@ -68,7 +73,7 @@ impl Lexer {
                     }
 
                     self.push(Token::Asterisk);
-                },
+                }
 
                 '&' => {
                     if self.peek().is_alphabetic() {
@@ -90,7 +95,7 @@ impl Lexer {
                     let mut raw_number = String::from(next_char);
 
                     while self.peek().is_numeric() {
-                        raw_number.push(self.next().unwrap()); 
+                        raw_number.push(self.next().unwrap());
                     }
 
                     let number = raw_number.parse().unwrap();
@@ -109,7 +114,7 @@ impl Lexer {
                     let start = self.index;
                     let mut string = String::new();
                     while self.peek() != Some('"') {
-                        string.push(self.next().unwrap());
+                        string.push(self.next_char());
                     }
                     self.next();
                     self.push_long(Token::String(string), start)
@@ -117,38 +122,54 @@ impl Lexer {
 
                 '\'' => {
                     let start = self.index;
-                    let char = self.next().unwrap();
+                    let char = self.next_char();
                     self.next();
                     self.push_long(Token::Literal(char as i64), start);
                 }
-                _ => {} 
+                _ => {}
             };
-        }             
+        }
 
         self.tokens.clone()
     }
 
+    pub fn next_char(&mut self) -> char {
+        match self.next().unwrap() {
+            '\\' => {
+                match self.next().unwrap() {
+                    '0' => '\0',
+                    't' => '\t',
+                    'n' => '\n',
+                    'r' => '\r',
+                    // maybe more stuff
+                    c => c,
+                }
+            }
+            c => c,
+        }
+    }
+
     pub fn match_keyword(&mut self, word: &str) -> Option<Token> {
-       match word.to_lowercase().as_str() {
-           "if" => Some(Token::Keyword(Keyword::If)),
-           "else" => Some(Token::Keyword(Keyword::Else)),
-           "while" => Some(Token::Keyword(Keyword::While)),
-           "fn" => Some(Token::Keyword(Keyword::Function)),
-           _ => None
-       } 
+        match word.to_lowercase().as_str() {
+            "if" => Some(Token::Keyword(Keyword::If)),
+            "else" => Some(Token::Keyword(Keyword::Else)),
+            "while" => Some(Token::Keyword(Keyword::While)),
+            "fn" => Some(Token::Keyword(Keyword::Function)),
+            _ => None,
+        }
     }
 
     pub fn push(&mut self, token: Token) {
         self.tokens.push(Positioned { inner: token, range: self.index..self.index })
-    } 
+    }
 
     pub fn push_long(&mut self, token: Token, start: usize) {
         self.tokens.push(Positioned { inner: token, range: start..self.index })
-    } 
+    }
 
     pub fn push_two(&mut self, token: Token) {
         self.tokens.push(Positioned { inner: token, range: self.index..self.index + 1 })
-    } 
+    }
 
     // pub fn eof_error(&self) -> Error {
     //     Error {
@@ -162,14 +183,14 @@ impl Lexer {
         match self.program.len() >= self.index {
             true => Some(self.program[self.index - 1]),
             false => None,
-        } 
+        }
     }
 
     pub fn peek(&self) -> Option<char> {
         match self.program.len() > self.index {
             true => Some(self.program[self.index]),
-            false => None
-        } 
+            false => None,
+        }
     }
 
     pub fn matches(&self, c: char) -> bool {
@@ -224,7 +245,7 @@ pub enum Token {
     Literal(i64),
     Word(String),
     Keyword(Keyword),
-    
+
     OpenParen,
     CloseParen,
 
@@ -233,8 +254,6 @@ pub enum Token {
 
     OpenBracket,
     CloseBracket,
-
-    Semicolon,
 
     Percent,
     Carat,
@@ -263,7 +282,7 @@ pub enum Token {
     Grave,
     String(String),
 
-    Pointer(String, PointerAction)
+    Pointer(String, PointerAction),
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]

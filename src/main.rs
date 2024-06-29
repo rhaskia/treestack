@@ -1,14 +1,14 @@
 mod error;
-mod lexer;
-mod tree;
 mod interpreter;
+mod lexer;
 mod parser;
+mod tree;
 //mod compiler;
 mod repl;
 //use crate::parser::Parser;
-use crate::lexer::Lexer;
 use crate::interpreter::Interpreter;
-use clap::{Parser, command, arg};
+use crate::lexer::Lexer;
+use clap::{arg, command, Parser};
 use error::{Positioned, RangeError};
 use parser::Node;
 
@@ -26,7 +26,7 @@ fn main() {
 
     // Proper Clap stuff
     if let Some(ref file) = args.file {
-       run_file(&file, args.debug); 
+        run_file(&file, args.debug);
     } else {
         repl::start_repl(args.debug);
     }
@@ -35,17 +35,20 @@ fn main() {
 fn run_file(file: &str, debug: bool) {
     let program = match load_file(file) {
         Ok(file) => file,
-        Err(err) => { eprintln!("{}", err); return; }
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        }
     };
 
     let ast = match compile_ast(program.clone(), debug) {
         Ok(ast) => ast,
-        Err(err) => { 
+        Err(err) => {
             err.pretty_print(&program, true);
             return;
         }
     };
-    
+
     if let Err(err) = Interpreter::new(debug).parse(ast) {
         err.pretty_print(&program, true);
     }
@@ -53,14 +56,19 @@ fn run_file(file: &str, debug: bool) {
 
 fn compile_ast(program: String, debug: bool) -> Result<Vec<Positioned<Node>>, RangeError> {
     let tokens = Lexer::new(program).parse();
-    if debug { println!("{tokens:?}"); }// FIT behind debug flag
+    if debug {
+        println!("{tokens:?}");
+    } // FIT behind debug flag
 
     let ast = parser::Parser::new(tokens).parse()?;
-    if debug { println!("{ast:?}"); } // FIT behind debug flag
+    if debug {
+        println!("{ast:?}");
+    } // FIT behind debug flag
 
     Ok(ast)
 }
 
 fn load_file(path: &str) -> Result<String, String> {
-   std::fs::read_to_string(path).map_err(|e| format!("Error while loading program: {:?}", e.kind()))
+    std::fs::read_to_string(path)
+        .map_err(|e| format!("Error while loading program: {:?}", e.kind()))
 }

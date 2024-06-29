@@ -1,2 +1,19 @@
-fn fib { &count 1 1 &fib ^count while { ^fib over over + &fib ^count --  } ^fib }
+; honestly no clue how this works
+fn fib { 
+    &count 
+    1 1 
+    &fib 
+    ^count 
+    while { 
+        ^fib 
+        over 
+        over 
+        + 
+        &fib 
+        ^count 
+        --  
+    } 
+    ^fib
+}
+
 6 fib .

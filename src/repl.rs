@@ -1,7 +1,10 @@
-use crossterm::{event::{read, Event, KeyCode, KeyEventKind, KeyModifiers}, terminal::{disable_raw_mode, enable_raw_mode}};
 use crate::interpreter::Interpreter;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
+use crossterm::{
+    event::{read, Event, KeyCode, KeyEventKind, KeyModifiers},
+    terminal::{disable_raw_mode, enable_raw_mode},
+};
 use std::io::{stdout, Write};
 
 pub fn start_repl(debug: bool) {
@@ -24,13 +27,15 @@ pub fn start_repl(debug: bool) {
             _ => continue,
         };
 
-        if event.kind == KeyEventKind::Release { continue; }
+        if event.kind == KeyEventKind::Release {
+            continue;
+        }
 
         match event.code {
             KeyCode::Char('c') if event.modifiers == KeyModifiers::CONTROL => {
                 break;
             }
-            KeyCode::Char(c) => { 
+            KeyCode::Char(c) => {
                 if cursor == input.len() {
                     input.push(c);
                 } else {
@@ -38,15 +43,27 @@ pub fn start_repl(debug: bool) {
                 }
                 cursor += 1;
             }
-            KeyCode::Backspace => { 
-                if cursor == 0 { continue; }
+            KeyCode::Backspace => {
+                if cursor == 0 {
+                    continue;
+                }
                 input.remove(cursor - 1);
                 cursor -= 1;
-            },
-            KeyCode::Left => if cursor != 0 { cursor -= 1; }
-            KeyCode::Right => if cursor != input.len() { cursor += 1; }
+            }
+            KeyCode::Left => {
+                if cursor != 0 {
+                    cursor -= 1;
+                }
+            }
+            KeyCode::Right => {
+                if cursor != input.len() {
+                    cursor += 1;
+                }
+            }
             KeyCode::Up => {
-                if scrollback == commands.len() { continue; }
+                if scrollback == commands.len() {
+                    continue;
+                }
                 scrollback += 1;
                 input = commands[commands.len() - scrollback].clone();
                 cursor = input.len();
@@ -62,14 +79,16 @@ pub fn start_repl(debug: bool) {
                 let tokens = Lexer::new(input.clone()).parse();
                 let ast = Parser::new(tokens).parse().unwrap();
                 let result = interpreter.parse(ast);
-                if let Err(msg) = result { msg.pretty_print(&input, false); }
+                if let Err(msg) = result {
+                    msg.pretty_print(&input, false);
+                }
                 commands.push(input.clone());
                 input.clear();
                 cursor = 0;
                 print!("\n\r> ");
                 enable_raw_mode().unwrap();
             }
-            _ => {} 
+            _ => {}
         }
 
         print!("\x1b[2K\r> {input}\r\x1b[{}C", cursor + 2);
