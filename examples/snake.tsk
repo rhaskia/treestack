@@ -1,0 +1,57 @@
+; player
+1 [ 1[0 0] &player ] 
+; direction
+1
+; screen
+1 &screen [ 20 80 ]
+; input
+1 [ &input_store ]
+
+fn draw_player {
+    ^screen
+}
+
+fn input {
+    ^input_store
+   ? 
+   .
+}
+
+; alt screen
+1 rawmode `
+;"\e[?1049h" print
+
+while {
+    ?
+
+    ; check for ctrl c
+    dup 3 = 
+    if { 
+        drop
+        0
+    } else { 
+        drop
+        dup 27 =
+        if {
+            drop
+            ?
+            96 =
+            if {
+                drop
+                ? 
+                dup 65 =
+                if { drop &p ^player [ ++ ] ^p }
+            }
+        }
+    }
+
+    ; movement 
+    32 ,
+    *player .
+
+    10 sleep
+}
+
+; alt screen exit
+1 rawmode `
+;"\e[?1049l" print

@@ -6,8 +6,9 @@ use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use fehler::throws;
 use rand::Rng;
 use std::collections::HashMap;
-use std::io::Read;
+use std::io::{Read, stdout, Write};
 use std::ops::{self, Range};
+use std::time::Duration;
 #[cfg(target_os = "linux")]
 use syscalls::{raw_syscall, Sysno};
 
@@ -85,6 +86,7 @@ impl Interpreter {
             }
         }
 
+        stdout().flush();
         Ok(())
     }
 
@@ -233,6 +235,9 @@ impl Interpreter {
                 let random_no: i64 = rand::thread_rng().gen_range(min..max);
                 self.push_raw(random_no)
             }
+            "true" => self.push_raw(1),
+            "false" => self.push_raw(1),
+            "sleep" => std::thread::sleep(Duration::from_millis(self.pop()?.val as u64)),
             "rawmode" => {
                 if self.truthy() {
                     enable_raw_mode()

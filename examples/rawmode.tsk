@@ -1,0 +1,14 @@
+1 rawmode drop
+
+1 while {
+    ;input
+   ? 
+
+   ; check for ctrl c
+   dup 3 = 
+   if { drop 0 } else { drop }
+
+   100 sleep
+}
+
+0 rawmode

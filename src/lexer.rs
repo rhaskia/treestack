@@ -141,7 +141,7 @@ impl Lexer {
                     't' => '\t',
                     'n' => '\n',
                     'r' => '\r',
-                    // maybe more stuff
+                    'e' => '\x1b',
                     c => c,
                 }
             }
@@ -170,13 +170,6 @@ impl Lexer {
     pub fn push_two(&mut self, token: Token) {
         self.tokens.push(Positioned { inner: token, range: self.index..self.index + 1 })
     }
-
-    // pub fn eof_error(&self) -> Error {
-    //     Error {
-    //         message: String::from("Expected token found EOF"),
-    //         range: (self.index - 1)..(self.index)
-    //     }
-    // }
 
     pub fn next(&mut self) -> Option<char> {
         self.index += 1;
