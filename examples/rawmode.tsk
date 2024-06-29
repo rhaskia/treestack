@@ -1,5 +1,5 @@
-1 rawmode
-"this is in raw mode, so you can get char-by-char input"
+1 rawmode 
+; this is in raw mode, so you can get char-by-char input
 
 1 while {
     ;input
