@@ -86,7 +86,6 @@ impl Interpreter {
             }
         }
 
-        stdout().flush();
         Ok(())
     }
 
@@ -120,6 +119,7 @@ impl Interpreter {
             }
             "shear" => self.on()?.children.clear(),
             "empty" => self.current().children.clear(),
+            "flush" => stdout().flush().unwrap(),
             "drop" => {
                 self.pop()?;
             }
@@ -276,8 +276,8 @@ impl Interpreter {
                 if !self.is_pointer_valid(&pointer) {
                     return;
                 } // Error
-                let value = self.at_pointer(pointer.clone()).children[pointer.branch - 1].val;
-                self.push_raw(value)
+                let value = self.at_pointer(pointer.clone()).children[pointer.branch - 1].clone();
+                self.push(value)
             }
         }
     }

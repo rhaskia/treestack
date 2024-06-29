@@ -1,0 +1,73 @@
+; player
+1 [ 1 [1 1] &player ] 
+; direction
+1
+; screen
+1 &screen [ 20 80 ]
+; input
+1 [ &input_store ]
+
+fn draw_player {
+    ^screen
+}
+
+fn input {
+    ^input_store
+   ? 
+   .
+}
+
+; alt screen
+1 rawmode `
+"\e[?1049h" print
+flush
+
+while {
+    ?
+
+    ; check for ctrl c
+    dup 3 = 
+    if { 
+        drop
+        0
+    } else { 
+        drop
+        dup 27 =
+        if {
+            drop
+            ?
+            91 =
+            if {
+                ? 
+                ; up arrow
+                dup 65 =
+                if { drop &p ^player [ ++ ] ^p } drop
+                ; down arrow
+                dup 66 =
+                if { drop &p ^player [ -- ] ^p } drop
+                ; left arrow
+                dup 67 =
+                if { drop &p ^player [ ( ++ ] ^p } drop
+                ; right arrow
+                dup 68 =
+                if { drop &p ^player [ ( -- ] ^p } drop
+            }
+            drop
+        }
+        drop
+    }
+
+    ; movement 
+    "\e[2J" print
+    
+    "\e[" print *player [ . ";" print . ] drop "H" print
+    "@" print
+    flush
+
+    10 sleep
+}
+
+; alt screen exit
+1 rawmode `
+"\e[?1049l" print
+flush

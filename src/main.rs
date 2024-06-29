@@ -9,6 +9,7 @@ mod repl;
 use crate::interpreter::Interpreter;
 use crate::lexer::Lexer;
 use clap::{arg, command, Parser};
+use crossterm::terminal::disable_raw_mode;
 use error::{Positioned, RangeError};
 use parser::Node;
 
@@ -50,6 +51,7 @@ fn run_file(file: &str, debug: bool) {
     };
 
     if let Err(err) = Interpreter::new(debug).parse(ast) {
+        disable_raw_mode().unwrap();
         err.pretty_print(&program, true);
     }
 }
