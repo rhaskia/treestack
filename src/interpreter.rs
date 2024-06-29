@@ -117,6 +117,7 @@ impl Interpreter {
                 self.push_raw(syscall(call));
             }
             "shear" => self.on()?.children.clear(),
+            "empty" => self.current().children.clear(),
             "drop" => {
                 self.pop()?;
             }
@@ -198,10 +199,20 @@ impl Interpreter {
             }
             "flatten" => {
                 let current = self.current().clone();
+                let old_branch = current.len();
                 let flattened = current.flatten();
                 self.current().children = flattened;
-                // for each node, extract children into upper
+                let new_len = self.current().len();
+                self.pointer.branch += new_len - old_branch;
             }
+            "left" => {
+                let left = self.pointer.branch;
+                self.push_raw(left as i64);
+            } 
+            "size" => {
+                let size = self.current().len();
+                self.push_raw(size as i64);
+            } 
             "rotate" => {
                 let amount = self.pop()?.val as usize;
                 let vec = self.current().children.clone();
