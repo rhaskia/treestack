@@ -124,7 +124,10 @@ impl Interpreter {
                 self.push_raw(syscall(call));
             }
             "shear" => self.on()?.children.clear(),
-            "empty" => self.current().children.clear(),
+            "empty" => {
+                self.current().children.clear();
+                self.pointer.branch = 0;
+            }
             "flush" => stdout().flush().unwrap(),
             "drop" => {
                 self.pop()?;

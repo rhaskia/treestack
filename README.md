@@ -5,6 +5,8 @@ Check out some of the examples in the ./examples directory, any of them can be r
 Debug is also available through `-d` or `--debug`.
 Running the lang without a file opens a repl.
 
+A demo is also viewable at [Asciinema](https://asciinema.org/a/olzzI01svZEg1vmQHPjHm6uMu), but i recommend trying out the lang yourself.
+
 # Syntax
 The syntax is very simple, and is very close to forth with its reverse polish packer notation. It is is derived of 3-4 main types: [operators](operators.md), [words](words.md), and pushing; through raw number literals, string literals and char literals. There is also some control flow that acts a bit differently, which is described in [words](words.md).
 

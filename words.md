@@ -27,6 +27,8 @@
 
 `rawmode` allows the terminal to enter rawmode, useful for games
 
+`sleep` sleeps for n milliseconds
+
 ## List Control
 `concant` combines two stacks into one
 
