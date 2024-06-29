@@ -13,15 +13,14 @@ dup print
     dup 0 =
     if { 
         drop
-        drop
         continue
-    } else { drop drop }
+    } else { drop }
 
     dup 127 =
     if {
-        drop drop [ left if { drop drop } ]
+        drop [ left if { drop drop } ]
     } else { 
-        drop (
+        (
         [ in *c ]
         ) drop
     }

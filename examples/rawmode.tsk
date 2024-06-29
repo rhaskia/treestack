@@ -1,4 +1,5 @@
-1 rawmode drop
+1 rawmode
+"this is in raw mode, so you can get char-by-char input"
 
 1 while {
     ;input
@@ -7,6 +8,9 @@
    ; check for ctrl c
    dup 3 = 
    if { drop 0 } else { drop }
+
+   if { "Pressed Char Code:" print . "\n\r" print }
+   flush
 
    100 sleep
 }

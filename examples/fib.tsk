@@ -1,19 +1,14 @@
 ; honestly no clue how this works
 fn fib { 
-    &count 
-    1 1 
-    &fib 
-    ^count 
-    while { 
-        ^fib 
+    --
+    0 1 
+    (( while { 
+        ))
         over 
         over 
-        + 
-        &fib 
-        ^count 
-        --  
-    } 
-    ^fib
+        +
+        (( drop --
+    } ))
 }
 
-6 fib .
+9 fib .

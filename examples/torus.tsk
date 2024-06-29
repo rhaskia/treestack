@@ -13,7 +13,7 @@ while {
             20 < swap 8 >
             +
             if { "#" print } else { " " print } 
-            drop 
+            1
         }
         10 ,
     ]

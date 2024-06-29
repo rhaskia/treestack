@@ -1,7 +1,6 @@
-"If you're over 25 and own a computer this language is a must-try!"
-(Insert wise mystical tree picture)
 Treestack works essentially like a regular stack language, except each stack contains a stack of their own.
 Treestack also allows for more movement around the stack/s than a Forth for example, and also allows for pointers to locations on the stack.
+The language also contains some more array-lang oriented features, and some more functional features.
 
 Check out some of the examples in the ./examples directory, any of them can be run with `treestack file` if you have it compiled, or just `cargo run -- file`.
 Debug is also available

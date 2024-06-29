@@ -61,6 +61,7 @@ while {
     "\e[2J\e[H" print
     
     0 [1 *x range while { 32 , drop } 1 3 *y range while { 10 , drop }] drop
+    "@" print
     flush
 
     10 sleep
