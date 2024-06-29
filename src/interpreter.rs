@@ -39,6 +39,7 @@ pub struct Interpreter {
     pointers: HashMap<String, Pointer>,
     debug: bool,
     range: Range<usize>,
+    brk: bool,
 }
 
 impl Interpreter {
@@ -52,6 +53,9 @@ impl Interpreter {
             let inst = format!("{:?}: ", instruction.inner);
             match instruction.inner {
                 Node::Push(u) => self.push_raw(u),
+                Node::Return => return Ok(()),
+                Node::Break => { self.brk = true; break; }
+                Node::Continue => { break; }
                 Node::String(string) => self.push_string(string),
                 Node::Operator(op) => self.eval_op(op.clone())?,
                 Node::Call(call) => {
@@ -62,6 +66,7 @@ impl Interpreter {
                 }
                 Node::While(expr) => {
                     while self.truthy() {
+                        if self.brk { self.brk = false; break; }
                         self.parse(expr.clone())?
                     }
                 }
@@ -103,7 +108,8 @@ impl Interpreter {
             }
             "read" => {
                 let file = self.pop_string()?;
-                self.push_file(std::fs::read(file).unwrap());
+                let contents = std::fs::read_to_string(file).unwrap();
+                self.push_string(contents);
             }
             "write" => {
                 let file = self.pop_string()?;
@@ -220,6 +226,9 @@ impl Interpreter {
                 let vec = self.current().children.clone();
                 self.current().children = rotate_vec_slice(vec, amount)
             }
+            "in" => {
+                self.pointer.branch = self.current().len();
+            }
             "rev" => {
                 let rev_children = self.current().children.clone().into_iter().rev().collect();
                 self.current().children = rev_children;
@@ -315,14 +324,6 @@ impl Interpreter {
 
     fn push_raw(&mut self, val: i64) {
         self.push(TreeNode { val, children: Vec::new() });
-    }
-
-    fn push_file(&mut self, vec: Vec<u8>) {
-        let length = vec.len();
-        for item in vec {
-            self.push_raw(item as i64);
-        }
-        self.push_raw(length as i64);
     }
 
     fn push_string(&mut self, string: String) {

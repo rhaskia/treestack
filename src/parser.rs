@@ -62,6 +62,9 @@ impl Parser {
                 Node::If(if_expr, else_expr)
             }
             Keyword::Else => unreachable!(),
+            Keyword::Return => Node::Return,
+            Keyword::Break => Node::Break,
+            Keyword::Continue => Node::Continue,
             Keyword::While => {
                 self.ensure_next(Token::OpenBrace)?;
                 Node::While(self.expression()?)
@@ -123,4 +126,7 @@ pub enum Node {
     Pointer(String, PointerAction),
     Function(String, Vec<Positioned<Node>>),
     String(String),
+    Return,
+    Break,
+    Continue,
 }

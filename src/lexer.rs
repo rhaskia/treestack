@@ -155,6 +155,9 @@ impl Lexer {
             "else" => Some(Token::Keyword(Keyword::Else)),
             "while" => Some(Token::Keyword(Keyword::While)),
             "fn" => Some(Token::Keyword(Keyword::Function)),
+            "return" => Some(Token::Keyword(Keyword::Return)),
+            "break" => Some(Token::Keyword(Keyword::Break)),
+            "continue" => Some(Token::Keyword(Keyword::Continue)),
             _ => None,
         }
     }
@@ -231,6 +234,9 @@ pub enum Keyword {
     Else,
     While,
     Function,
+    Return,
+    Break,
+    Continue,
 }
 
 #[derive(Debug, Clone, EnumIs, PartialEq)]

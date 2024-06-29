@@ -1,0 +1,36 @@
+1 rawmode
+"test.txt" read 
+dup print
+
+++ while {
+    ? &c
+
+    dup 3 = 
+    if {
+        break
+    } 
+
+    dup 0 =
+    if { 
+        drop
+        drop
+        continue
+    } else { drop drop }
+
+    dup 127 =
+    if {
+        drop drop [ left if { drop drop } ]
+    } else { 
+        drop (
+        [ in *c ]
+        ) drop
+    }
+
+    "\e[H\e[2J" print
+    dup print
+    flush
+    10 sleep
+}
+
+
+0 rawmode
