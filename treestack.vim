@@ -28,4 +28,7 @@ highlight link tskOp Operator
 syn match tskMove "[\[\]\{}()]"
 highlight link tskMove Function
 
+syn region tskPointer start="[*&\\^][a-zA-Z_]"hs=s+1 end="[^a-zA-Z_]"
+highlight link tskPointer Structure
+
 let b:current_syntax = "treestack"

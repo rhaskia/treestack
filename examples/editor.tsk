@@ -1,6 +1,6 @@
-1 rawmode
+1 rawmode 
 "test.txt" read 
-dup print
+dup print 
 
 ++ while {
     ? &c

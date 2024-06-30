@@ -91,9 +91,10 @@ pub fn start_repl(debug: bool) {
             _ => {}
         }
 
-        print!("\x1b[2K\r> {input}\r\x1b[{}C", cursor + 2);
+        print!("\x1b[2K\r> {}\x1b[0m\r\x1b[{}C", &input, cursor + 2);
         stdout.flush().unwrap();
     }
 
     disable_raw_mode().unwrap();
 }
+
