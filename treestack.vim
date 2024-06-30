@@ -22,13 +22,13 @@ highlight link tskWord Identifier
 
 " syn region tskFunc start="fn " hs=e+1 end=" "he=s-1
 " highlight link tskFunc Type
-syn match tskOp "[!&*+,./<=>?@\\^`|-]"
+syn match tskOp "[!&*+%,./<=>?@\\^`|-]"
 highlight link tskOp Operator
 
 syn match tskMove "[\[\]\{}()]"
 highlight link tskMove Function
 
-syn region tskPointer start="[*&\\^][a-zA-Z_]"hs=s+1 end="[^a-zA-Z_]"
-highlight link tskPointer Structure
+syn region tskPointer start="[*&\\^][a-zA-Z_]" end="[^a-zA-Z_]"me=e-1
+highlight link tskPointer Operator
 
-let b:current_syntax = "treestack"
+let b:current_syntax = "tsk"

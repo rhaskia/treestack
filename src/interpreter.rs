@@ -191,6 +191,24 @@ impl Interpreter {
                 self.pointer = start_pointer.clone();
                 self.pointer.branch -= popped;
             }
+            "ifthen" => {
+
+            }
+            "dowhile" => {
+                let while_expr = self.pop_string()?;
+                let while_ast = crate::compile_ast(while_expr, self.debug)?;
+                let do_expr = self.pop_string()?;
+                let do_ast = crate::compile_ast(do_expr, self.debug)?;
+
+                self.parse(while_ast.clone());
+                while self.truthy() {
+                    self.parse(do_ast.clone())?;
+                    self.parse(while_ast.clone())?;
+                }
+            }
+            "match" => {
+
+            }
             "recmap" => {}
             "range" => {
                 let max = self.pop()?;

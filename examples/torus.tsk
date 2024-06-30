@@ -1,7 +1,7 @@
 fn init_uv { 11 while { &x [ 21 while { dup -- *x swap } ] dup -- shear } }
 fn square { dup * }
 init_uv
-drop
+drop 
 while { 
     [ 
         drop
@@ -17,5 +17,5 @@ while {
         }
         10 ,
     ]
-    drop
+    drop 
 }
