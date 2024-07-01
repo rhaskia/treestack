@@ -176,7 +176,7 @@ impl Interpreter {
                     self.push(current);
                     self.parse(ast.clone())?;
                     let truthy = self.truthy();
-                    println!("{:?}", self.pop()?);
+                    self.pop()?;
 
                     current_offset += 1;
 
@@ -201,7 +201,7 @@ impl Interpreter {
                 let do_expr = self.pop_string()?;
                 let do_ast = crate::compile_ast(do_expr, self.debug)?;
 
-                self.parse(while_ast.clone());
+                self.parse(while_ast.clone())?;
                 while self.truthy() {
                     self.parse(do_ast.clone())?;
                     self.parse(while_ast.clone())?;

@@ -94,6 +94,7 @@ impl Lexer {
                     }
 
                     if self.matches('&') {
+                        self.next();
                         self.push(Token::And);
                     } else {
                         self.push(Token::Ampersand);

@@ -69,6 +69,7 @@ pub fn start_repl(debug: bool) {
                 cursor = input.len();
             }
             KeyCode::Down => {
+                if scrollback == 0 { continue; }
                 scrollback -= 1;
                 input = commands[commands.len() - scrollback].clone();
                 cursor = input.len();
@@ -82,9 +83,11 @@ pub fn start_repl(debug: bool) {
                 if let Err(msg) = result {
                     msg.pretty_print(&input, false);
                 }
+                if commands.contains(&input) { commands.retain(|x| *x != input); }
                 commands.push(input.clone());
                 input.clear();
                 cursor = 0;
+                scrollback = 0;
                 print!("\n\r> ");
                 enable_raw_mode().unwrap();
             }
