@@ -29,6 +29,16 @@ impl Lexer {
 
                 '}' => self.push(Token::CloseBrace),
                 '{' => self.push(Token::OpenBrace),
+                '$' => {
+                    let start = self.index;
+                    self.next();
+                    let mut string = String::new();
+                    while self.peek() != Some('}') {
+                        string.push(self.next_char());
+                    }
+                    self.next();
+                    self.push_long(Token::Block(string), start)
+                },
 
                 ']' => self.push(Token::CloseBracket),
                 '[' => self.push(Token::OpenBracket),
@@ -244,6 +254,7 @@ pub enum Token {
     Literal(i64),
     Word(String),
     Keyword(Keyword),
+    Block(String),
 
     OpenParen,
     CloseParen,

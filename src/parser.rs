@@ -32,9 +32,8 @@ impl Parser {
                 Token::Word(w) => expr.push(position(Node::Call(w), range)),
                 Token::Keyword(k) => expr.push(self.statement(k)?),
                 Token::CloseBrace => break,
-                Token::Pointer(name, action) => {
-                    expr.push(position(Node::Pointer(name, action), range))
-                }
+                Token::Block(s) => expr.push(position(Node::Block(s), range)),
+                Token::Pointer(name, action) => expr.push(position(Node::Pointer(name, action), range)),
                 Token::String(string) => expr.push(position(Node::String(string), range)),
                 op => expr.push(position(Node::Operator(op), range)),
             }
@@ -66,7 +65,7 @@ impl Parser {
             Keyword::Break => Node::Break,
             Keyword::Continue => Node::Continue,
             Keyword::While => {
-                self.ensure_next(Token::OpenBrace)?;
+                self.ensure_next(Token::OpenBrace);
                 Node::While(self.expression()?)
             }
             Keyword::Function => {
@@ -126,6 +125,7 @@ pub enum Node {
     Pointer(String, PointerAction),
     Function(String, Vec<Positioned<Node>>),
     String(String),
+    Block(String),
     Return,
     Break,
     Continue,

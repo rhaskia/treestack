@@ -56,6 +56,7 @@ impl Interpreter {
                 Node::Return => return Ok(()),
                 Node::Break => { self.brk = true; break; }
                 Node::Continue => { break; }
+                Node::Block(s) => self.push_string(s),
                 Node::String(string) => self.push_string(string),
                 Node::Operator(op) => self.eval_op(op.clone())?,
                 Node::Call(call) => {
@@ -175,7 +176,7 @@ impl Interpreter {
                     self.push(current);
                     self.parse(ast.clone())?;
                     let truthy = self.truthy();
-                    self.pop()?;
+                    println!("{:?}", self.pop()?);
 
                     current_offset += 1;
 
@@ -396,7 +397,11 @@ impl Interpreter {
             MinusMinus => {
                 self.on()?.val -= 1;
             }
-            Not => self.on()?.val = (self.on()?.val == 0) as i64,
+            Not => {
+                let mut item = self.pop()?;
+                item.val = (item.val == 0) as i64;
+                self.push(item);
+            },
             Grave => {
                 self.pop()?;
             }
